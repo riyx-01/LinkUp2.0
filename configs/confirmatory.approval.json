@@ -1,11 +1,11 @@
 {
   "approved_by": "Riya",
-  "approved_at_utc": "2026-11-26T18:00:21+00:00",
-  "note": "",
-  "confirmatory_config_sha256": "3e9698f0ab572e11cac395b0c7365b21aae8d2c3c0d41b1a97fbbcd8c4c11fcb",
-  "experiments_sha256": "ee91cf7a40a13253e9bc7efda0253bd91e062e9e4b7d4be3fec099bbafe6bf24",
-  "source_sha256": "5f0c2c3d5e8be5bcf9e07d94c02b54cda160fd9ac44c8f1a8c3045d64c670af4",
-  "code_version": "1.0.0+src.5f0c2c3d5e",
+  "approved_at_utc": "2026-11-26T20:23:37+00:00",
+  "note": "Revision 2: H1/H5 2pp effect, zero-variance fix, efficiency metrics, X3/X4",
+  "confirmatory_config_sha256": "3045987dd53a6bff5171dd84718f55beb38fbd8e488c21843a4a856ea114354b",
+  "experiments_sha256": "6d3c56483c03ee5a1abf14c54d37443457386802b5f1c5828e847e09e94ec55d",
+  "source_sha256": "93e0046b68d6baf3b52155d29855351f3698995df1117ea0d89b45436f2c08e8",
+  "code_version": "1.0.0+src.93e0046b68.git.14a76c9e",
   "seeds": [
     1001,
     1002,
@@ -41,5 +41,10 @@
   "alpha": 0.05,
   "h2_noninferiority_margin_pp": 5.0,
   "planned_repetitions": 30,
-  "h4_model": "independent_groups_welch"
+  "h4_model": "independent_groups_welch",
+  "zero_variance_rule": "inconclusive",
+  "meaningful_target_effects_pp": {
+    "H1": 2.0,
+    "H5": 2.0
+  }
 }
