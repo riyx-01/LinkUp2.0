@@ -234,3 +234,107 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# -----------------------------------------------------------------------------
+# Vercel Serverless Function & Web Handlers
+# Exposes top-level `app`, `application`, and `handler` for Vercel deployment.
+# -----------------------------------------------------------------------------
+from http.server import BaseHTTPRequestHandler
+
+
+class handler(BaseHTTPRequestHandler):
+    """Vercel Python serverless HTTP handler."""
+
+    def do_GET(self) -> None:
+        path = self.path.split("?")[0]
+
+        if path in ("/api/status", "/api/health"):
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            body = json.dumps({
+                "status": "healthy",
+                "service": "LinkUp Research Simulator",
+                "phase": "confirmatory",
+                "version": "1.0.0"
+            }, indent=2).encode("utf-8")
+            self.wfile.write(body)
+            return
+
+        if path == "/api/hypotheses":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            data = {
+                "H1": {"metric": "D5 delivery ratio", "comparison": "MWS vs BSW", "result": "Fail to reject null (p_holm = 0.0719)"},
+                "H2": {"metric": "D15 delivery ratio", "comparison": "MWS vs BSW (Non-inferiority)", "result": "Non-inferiority established (p_holm = 8.5e-43)"},
+                "H3": {"metric": "Overhead ratio", "comparison": "MWS vs BSW", "result": "Fail to reject null (p_holm = 0.2309)"},
+                "H4": {"metric": "Density sensitivity", "test": "Welch ANOVA", "result": "Fail to reject null (p_holm = 0.8949)"},
+                "H5": {"metric": "Energy efficiency", "comparison": "MWS vs BSW", "result": "Reject null: Significant advantage (p_holm = 3.19e-07)"}
+            }
+            self.wfile.write(json.dumps(data, indent=2).encode("utf-8"))
+            return
+
+        # Serve LinkUp Explorer HTML
+        html_file = ROOT / "public" / "index.html"
+        if not html_file.exists():
+            html_file = ROOT / "results" / "explorer" / "linkup_explorer_N100_s1.html"
+
+        if html_file.exists():
+            payload = html_file.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+        else:
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.end_headers()
+            self.wfile.write(b"<!DOCTYPE html><html><body><h1>LinkUp Research Simulator</h1></body></html>")
+
+
+def app(environ: dict, start_response: callable) -> list[bytes]:
+    """WSGI application callable for Vercel / WSGI servers."""
+    path = environ.get("PATH_INFO", "/")
+
+    if path in ("/api/status", "/api/health"):
+        start_response("200 OK", [("Content-Type", "application/json")])
+        return [json.dumps({
+            "status": "healthy",
+            "service": "LinkUp Research Simulator",
+            "phase": "confirmatory",
+            "version": "1.0.0"
+        }, indent=2).encode("utf-8")]
+
+    if path == "/api/hypotheses":
+        start_response("200 OK", [("Content-Type", "application/json")])
+        data = {
+            "H1": {"metric": "D5 delivery ratio", "comparison": "MWS vs BSW", "result": "Fail to reject null (p_holm = 0.0719)"},
+            "H2": {"metric": "D15 delivery ratio", "comparison": "MWS vs BSW (Non-inferiority)", "result": "Non-inferiority established (p_holm = 8.5e-43)"},
+            "H3": {"metric": "Overhead ratio", "comparison": "MWS vs BSW", "result": "Fail to reject null (p_holm = 0.2309)"},
+            "H4": {"metric": "Density sensitivity", "test": "Welch ANOVA", "result": "Fail to reject null (p_holm = 0.8949)"},
+            "H5": {"metric": "Energy efficiency", "comparison": "MWS vs BSW", "result": "Reject null: Significant advantage (p_holm = 3.19e-07)"}
+        }
+        return [json.dumps(data, indent=2).encode("utf-8")]
+
+    html_file = ROOT / "public" / "index.html"
+    if not html_file.exists():
+        html_file = ROOT / "results" / "explorer" / "linkup_explorer_N100_s1.html"
+
+    if html_file.exists():
+        payload = html_file.read_bytes()
+        start_response("200 OK", [
+            ("Content-Type", "text/html; charset=utf-8"),
+            ("Content-Length", str(len(payload)))
+        ])
+        return [payload]
+
+    start_response("200 OK", [("Content-Type", "text/html; charset=utf-8")])
+    return [b"<!DOCTYPE html><html><body><h1>LinkUp Research Simulator</h1></body></html>"]
+
+
+# Alias application to app for Django/WSGI conventions
+application = app
+

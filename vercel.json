@@ -1,0 +1,13 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/main.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/public/index.html"
+    }
+  ]
+}
