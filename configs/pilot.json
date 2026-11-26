@@ -1,0 +1,12 @@
+{
+  "extends": "default.json",
+  "description": "Pilot phase (stage 6). Pilot seeds 101-105 are NEVER reused as confirmatory observations. Pilot results are used only for runtime, mobility plausibility, workload validity and variability assessment - never to tune MWS.",
+  "phase": "pilot",
+  "seeds": [101, 102, 103, 104, 105],
+  "output": {
+    "event_log": false,
+    "save_scenarios": true,
+    "save_positions": false,
+    "message_results": true
+  }
+}

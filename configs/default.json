@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "description": "LinkUp Research Simulator default configuration. All values are synthetic modelling assumptions, not calibrated festival measurements. See docs/configuration_reference.md.",
+  "phase": "development",
+  "seeds": [1, 2, 3],
+  "simulation": {
+    "time_step_s": 1,
+    "duration_s": 1800,
+    "warmup_s": 300
+  },
+  "venue": {
+    "width_m": 150,
+    "height_m": 100,
+    "zones": {
+      "main_stage":   {"x": [5, 55],   "y": [5, 30]},
+      "second_stage": {"x": [95, 145], "y": [5, 30]},
+      "food_court":   {"x": [5, 45],   "y": [65, 95]},
+      "facilities":   {"x": [60, 90],  "y": [75, 95]},
+      "entrance":     {"x": [115, 145], "y": [75, 95]}
+    }
+  },
+  "nodes": {
+    "node_count": 100
+  },
+  "mobility": {
+    "speed_min_mps": 0.5,
+    "speed_max_mps": 1.3,
+    "member_speed_variation": 0.05,
+    "member_offset_m": [0.5, 3.0],
+    "dwell_s": {
+      "main_stage":   [300, 600],
+      "second_stage": [300, 600],
+      "food_court":   [120, 300],
+      "facilities":   [60, 180],
+      "entrance":     [30, 120]
+    },
+    "destination_probabilities": {
+      "main_stage": 0.35,
+      "second_stage": 0.30,
+      "food_court": 0.20,
+      "facilities": 0.10,
+      "entrance": 0.05
+    },
+    "group_participation": 0.7,
+    "group_size_min": 2,
+    "group_size_max": 6,
+    "separation_hazard_per_s": 0.0005555555555555556,
+    "min_separation_s": 300,
+    "rejoin_distance_m": 3.0,
+    "rejoin_policy": "after_current_activity",
+    "zone_point_margin_m": 2.0
+  },
+  "communication": {
+    "radius_m": 10,
+    "transfer_capacity_per_node_per_s": 5,
+    "transfer_failure_prob": 0.0,
+    "contact_setup_delay_s": 0
+  },
+  "traffic": {
+    "generation_start_s": 300,
+    "generation_end_s": 900,
+    "mean_interarrival_s": 10,
+    "message_lifetime_s": 900,
+    "payload_bytes": 512,
+    "workload_type": "separated_friends"
+  },
+  "buffer": {
+    "capacity_messages": 50,
+    "drop_policy": "drop_oldest_created"
+  },
+  "routing": {
+    "algorithm": "BSW",
+    "copy_budget": 8,
+    "carrier_keeps_replica_after_delivery": true,
+    "mws": {
+      "friend_exclusion": true,
+      "walker_preference": true,
+      "patience_fallback": true,
+      "fallback_s": 60,
+      "motion_signal": "immediate",
+      "history_window_s": 300,
+      "history_threshold": 0.5
+    }
+  },
+  "motion_classification": {
+    "error_rate": 0.0,
+    "error_model": "independent",
+    "mean_burst_s": 5
+  },
+  "metrics": {
+    "d2_threshold_s": 120,
+    "d5_threshold_s": 300,
+    "d15_threshold_s": 900
+  },
+  "statistics": {
+    "alpha": 0.05,
+    "h2_noninferiority_margin_pp": 5.0,
+    "bootstrap_resamples": 5000,
+    "bootstrap_seed": 20240531,
+    "planned_repetitions": 30,
+    "h4_model": "independent_groups_welch"
+  },
+  "output": {
+    "event_log": false,
+    "save_scenarios": true,
+    "save_positions": true,
+    "message_results": true
+  }
+}

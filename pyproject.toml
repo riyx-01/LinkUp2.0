@@ -1,0 +1,15 @@
+[project]
+name = "linkup-research-simulator"
+version = "1.0.0"
+description = "Research simulator evaluating Motion-aware Walker-preferential Spray-and-Wait (MWS) for opportunistic smartphone messaging in crowded venues."
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "Academic use" }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = [
+    "ignore::DeprecationWarning:statsmodels.*",
+]

@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en" data-style="minimal">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LinkUp Explorer</title>
+<style>
+/* ---------------------------------------------------------------------------------------------
+   Three visual styles share one layout. Rules: no glow effects, no gradients. Every colour is a
+   token so the map canvas and the page always agree. Meaning never relies on colour alone:
+   shapes, tags and text carry it too.
+--------------------------------------------------------------------------------------------- */
+:root, :root[data-style="minimal"] {
+  --bg:#f6f5f1; --panel:#ffffff; --ink:#1c1c1c; --muted:#5f5f5f; --line:#dcd9d1;
+  --accent:#1c1c1c; --accent-ink:#ffffff; --soft:#efede7;
+  --zone:#ecebe4; --zone-line:#d4d1c7; --zone-label:#7d7a70; --grid:transparent; --venue-line:#bdb9ad;
+  --walk:#2563eb; --stand:#2563eb; --carrier:#e8590c; --from:#1c1c1c; --to:#9333ea; --ok:#15803d;
+  --xfer:#b9b5aa; --range:#2563eb; --friend:#cfcbc0; --sep:#d61f1f; --band:#e8590c22;
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-head: var(--font-body); --font-num: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --head-case:none; --head-weight:650; --head-track:-0.01em; --label-case:none; --label-track:0;
+  --radius:12px; --bw:1px; --shadow:none; --btn-radius:999px; --cut:none;
+}
+:root[data-style="brutalist"] {
+  --bg:#fff7e0; --panel:#ffffff; --ink:#000000; --muted:#262626; --line:#000000;
+  --accent:#ffd500; --accent-ink:#000000; --soft:#fff1b8;
+  --zone:#f1e8cc; --zone-line:#000000; --zone-label:#000000; --grid:transparent; --venue-line:#000000;
+  --walk:#0030ff; --stand:#0030ff; --carrier:#ff3d00; --from:#000000; --to:#b000e0; --ok:#008f2e;
+  --xfer:#8c8c8c; --range:#0030ff; --friend:#9a9583; --sep:#ff0040; --band:#ffd50066;
+  --font-body: "Courier New", ui-monospace, Consolas, monospace;
+  --font-head: "Arial Black", "Helvetica Neue", Arial, sans-serif; --font-num: "Courier New", ui-monospace, monospace;
+  --head-case:uppercase; --head-weight:900; --head-track:0.01em; --label-case:uppercase; --label-track:0.04em;
+  --radius:0px; --bw:3px; --shadow:6px 6px 0 #000000; --btn-radius:0px; --cut:none;
+}
+:root[data-style="cyberpunk"] {
+  --bg:#07080d; --panel:#0e1018; --ink:#e8eefb; --muted:#9aa3b8; --line:#2b3146;
+  --accent:#ff2e88; --accent-ink:#07080d; --soft:#161a27;
+  --zone:#111624; --zone-line:#00a7c4; --zone-label:#6fd3e6; --grid:#131827; --venue-line:#00a7c4;
+  --walk:#00e1ff; --stand:#00e1ff; --carrier:#ff2e88; --from:#ffffff; --to:#f5e400; --ok:#3dff8f;
+  --xfer:#3b4460; --range:#00e1ff; --friend:#2c3552; --sep:#ff5c5c; --band:#ff2e8833;
+  --font-body: "Cascadia Mono", Consolas, ui-monospace, "Courier New", monospace;
+  --font-head: var(--font-body); --font-num: var(--font-body);
+  --head-case:uppercase; --head-weight:700; --head-track:0.08em; --label-case:uppercase; --label-track:0.06em;
+  --radius:0px; --bw:1px; --shadow:none; --btn-radius:0px;
+  --cut: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+}
+* { box-sizing: border-box; }
+html, body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); font-size:15px; line-height:1.45; }
+button, select, input { font-family:inherit; font-size:14px; color:var(--ink); }
+h1, h2, h3 { font-family:var(--font-head); text-transform:var(--head-case); font-weight:var(--head-weight);
+  letter-spacing:var(--head-track); margin:0; }
+h1 { font-size:26px; line-height:1.15; }
+h2 { font-size:15px; margin-bottom:8px; }
+.muted { color:var(--muted); }
+.num { font-family:var(--font-num); font-variant-numeric:tabular-nums; }
+.lbl { text-transform:var(--label-case); letter-spacing:var(--label-track); font-size:12px; color:var(--muted); }
+.wrap { max-width:1500px; margin:0 auto; padding:18px 20px 28px; }
+
+/* header */
+.top { display:flex; gap:16px; align-items:flex-end; justify-content:space-between; flex-wrap:wrap;
+  padding-bottom:14px; border-bottom:var(--bw) solid var(--line); margin-bottom:14px; }
+.top p { margin:6px 0 0; color:var(--muted); max-width:760px; }
+:root[data-style="brutalist"] .top { border-bottom-width:6px; }
+:root[data-style="cyberpunk"] h1::before { content:"// "; color:var(--accent); }
+.styles { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+/* buttons and segmented controls */
+.btn { background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--btn-radius);
+  padding:7px 13px; cursor:pointer; box-shadow:var(--shadow); clip-path:var(--cut); }
+:root[data-style="brutalist"] .btn { box-shadow:3px 3px 0 #000; font-weight:700; text-transform:uppercase; }
+:root[data-style="brutalist"] .btn:active { transform:translate(3px,3px); box-shadow:none; }
+.btn:hover { background:var(--soft); }
+.btn[aria-pressed="true"], .btn.primary { background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+:root[data-style="brutalist"] .btn[aria-pressed="true"], :root[data-style="brutalist"] .btn.primary { border-color:#000; }
+.btn:focus-visible, select:focus-visible, input:focus-visible { outline:3px solid var(--walk); outline-offset:2px; }
+.seg { display:inline-flex; gap:6px; align-items:center; flex-wrap:wrap; }
+select { background:var(--panel); border:var(--bw) solid var(--line); border-radius:calc(var(--radius) / 2);
+  padding:7px 9px; max-width:100%; }
+:root[data-style="cyberpunk"] select { border-color:var(--zone-line); }
+
+/* control row */
+.controls { display:flex; flex-wrap:wrap; gap:12px 22px; align-items:flex-end; margin-bottom:14px; }
+.controls label { display:flex; flex-direction:column; gap:4px; }
+
+/* layout */
+.layout { display:grid; grid-template-columns:minmax(0, 1fr) 360px; gap:18px; align-items:start; }
+.layout > *, .maps > *, .controls > * { min-width:0; }
+@media (max-width: 1080px) { .layout { grid-template-columns:minmax(0, 1fr); } }
+@media (max-width: 600px) { .wrap { padding:14px 12px 24px; } h1 { font-size:22px; } .clock { font-size:19px; } }
+.card { background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow); clip-path:var(--cut); }
+.side { display:flex; flex-direction:column; gap:14px; }
+:root[data-style="brutalist"] .card { margin-right:6px; margin-bottom:6px; }
+
+/* maps */
+.maps { display:grid; grid-template-columns:1fr; gap:14px; }
+.maps.compare { grid-template-columns:1fr 1fr; }
+@media (max-width: 900px) { .maps.compare { grid-template-columns:1fr; } }
+.mapcard { margin:0; position:relative; }
+.mapcard figcaption { display:flex; flex-direction:column; gap:2px; margin-bottom:8px; }
+.mapcard .mname { font-family:var(--font-head); font-weight:var(--head-weight); text-transform:var(--head-case);
+  letter-spacing:var(--head-track); font-size:16px; }
+.mapcard .mdesc { color:var(--muted); font-size:13.5px; }
+.mapcard details.how { font-size:13px; }
+.mapcard details.how summary { font-family:var(--font-body); text-transform:none; font-weight:600; color:var(--ink); font-size:13px; }
+.mapcard details.how p { margin:6px 0 0; color:var(--muted); }
+.mapcard canvas { width:100%; display:block; cursor:crosshair; touch-action:manipulation; }
+.badgeline { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.badge { font-size:12.5px; border:var(--bw) solid var(--line); border-radius:var(--btn-radius); padding:3px 9px;
+  background:var(--soft); clip-path:var(--cut); }
+.badge.ok { border-color:var(--ok); color:var(--ok); background:var(--panel); font-weight:700; }
+.badge.wait { color:var(--muted); }
+.tip { position:absolute; pointer-events:none; background:var(--ink); color:var(--bg); padding:6px 9px; font-size:12.5px;
+  border-radius:6px; white-space:nowrap; z-index:5; display:none; }
+
+/* timeline */
+.timeline { margin-top:14px; }
+.tl-row { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; }
+.clock { font-family:var(--font-num); font-size:22px; font-weight:700; min-width:94px; }
+.track { position:relative; height:84px; margin:12px 10px 0; }
+.track input[type=range] { position:absolute; left:0; right:0; top:14px; width:100%; margin:0; accent-color:var(--carrier); height:18px; }
+.band { position:absolute; top:6px; height:6px; background:var(--band); border-radius:3px; }
+.mark { position:absolute; top:-6px; transform:translateX(-50%); font-size:11.5px; font-family:var(--font-num);
+  white-space:nowrap; color:var(--ink); }
+.mark.bottom.r1 { top:36px; }
+.mark.bottom.r2 { top:58px; }
+.mark.bottom.r2 i { height:30px; margin-top:-20px; }
+.mark i { display:block; width:2px; height:10px; margin:0 auto; background:currentColor; }
+
+/* side panel */
+.kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; align-items:baseline; }
+.kv dt { color:var(--muted); font-size:13px; }
+.kv dd { margin:0; font-family:var(--font-num); }
+.story { list-style:none; margin:0; padding:0; max-height:300px; overflow:auto; display:flex; flex-direction:column; gap:8px; }
+.story li { display:grid; grid-template-columns:52px 1fr; gap:8px; font-size:13.5px; padding-left:2px; }
+.story li time { font-family:var(--font-num); color:var(--muted); }
+.story li.latest { font-weight:650; }
+.story li.latest time { color:var(--carrier); }
+:root[data-style="brutalist"] .story li.latest { background:var(--accent); }
+.legend { list-style:none; margin:0; padding:0; display:grid; gap:7px; font-size:13.5px; }
+.legend li { display:grid; grid-template-columns:30px 1fr; gap:8px; align-items:center; }
+.toggles { display:flex; flex-direction:column; gap:6px; margin-top:10px; font-size:13.5px; }
+.toggles label { display:flex; gap:8px; align-items:center; cursor:pointer; }
+details summary { cursor:pointer; font-family:var(--font-head); text-transform:var(--head-case); font-weight:var(--head-weight); letter-spacing:var(--head-track); }
+dl.gloss dt { font-weight:700; margin-top:9px; }
+dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
+.cmp { width:100%; border-collapse:collapse; font-size:13.5px; }
+.cmp th, .cmp td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+.cmp td.num { text-align:right; }
+.note { font-size:12.5px; color:var(--muted); }
+
+/* tour */
+.tour-back { position:fixed; inset:0; background:#0000004d; z-index:20; }
+.tour { position:fixed; z-index:21; width:min(420px, calc(100vw - 32px)); }
+.tour .card { padding:18px; }
+.tour h3 { font-size:18px; margin-bottom:8px; }
+.tour .steps { font-family:var(--font-num); color:var(--muted); font-size:12px; margin-bottom:6px; }
+.tour .row { display:flex; justify-content:space-between; gap:8px; margin-top:14px; }
+.spot { outline:4px solid var(--carrier) !important; outline-offset:4px; position:relative; z-index:21; }
+[hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>LinkUp Explorer</h1>
+      <p>A replay of a simulated festival with no mobile signal. Phones pass messages person to person whenever two people
+         come within <b class="num" id="radiusTxt">10</b> metres of each other. Follow one message and see how each
+         method gets it to a separated friend.</p>
+    </div>
+    <div class="styles">
+      <span class="lbl">Style</span>
+      <div class="seg" role="group" aria-label="Visual style">
+        <button class="btn" data-style-btn="minimal">Minimal</button>
+        <button class="btn" data-style-btn="brutalist">Brutalist</button>
+        <button class="btn" data-style-btn="cyberpunk">Cyberpunk</button>
+      </div>
+      <button class="btn primary" id="helpBtn">How it works</button>
+    </div>
+  </header>
+
+  <section class="controls" id="controls">
+    <label><span class="lbl">Message to follow</span><select id="msgSel" aria-label="Message to follow"></select></label>
+    <div><span class="lbl">View</span><br>
+      <div class="seg" role="group" aria-label="View">
+        <button class="btn" data-mode="single">One method</button>
+        <button class="btn" data-mode="compare">Compare two</button>
+      </div>
+    </div>
+    <label><span class="lbl" id="methodALbl">Method</span><select id="methodA" aria-label="Method shown on the left"></select></label>
+    <label id="methodBWrap"><span class="lbl">Compared with</span><select id="methodB" aria-label="Method shown on the right"></select></label>
+  </section>
+
+  <main class="layout">
+    <section>
+      <div class="maps" id="maps"></div>
+      <div class="card timeline" id="timeline">
+        <div class="tl-row">
+          <div>
+            <div class="lbl">Festival clock</div>
+            <div class="clock" id="clock">05:00</div>
+          </div>
+          <div class="seg" role="group" aria-label="Playback">
+            <button class="btn" id="restartBtn" title="Back to when the message was sent">&#x21BA; Restart</button>
+            <button class="btn" id="backBtn" title="One second back (Left arrow)">&#x2212;1 s</button>
+            <button class="btn primary" id="playBtn" title="Play / pause (Space)">&#x25B6; Play</button>
+            <button class="btn" id="fwdBtn" title="One second forward (Right arrow)">+1 s</button>
+          </div>
+          <div class="seg" role="group" aria-label="Speed"><span class="lbl">Speed</span>
+            <button class="btn" data-speed="1">1&times;</button>
+            <button class="btn" data-speed="5">5&times;</button>
+            <button class="btn" data-speed="15">15&times;</button>
+            <button class="btn" data-speed="60">60&times;</button>
+          </div>
+          <div class="muted" id="ageTxt"></div>
+        </div>
+        <div class="track" id="track">
+          <input type="range" id="scrub" min="0" max="1" step="1" aria-label="Festival time">
+        </div>
+        <div class="note">Shaded strip = the 5-minute delivery target for the followed message. 1&times; = real time;
+          60&times; = one simulated minute per second.</div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="card" id="msgCard">
+        <h2>The message we follow</h2>
+        <div id="msgText"></div>
+        <div class="badgeline" id="msgBadges"></div>
+      </div>
+      <div class="card" id="storyCard">
+        <h2>What has happened so far</h2>
+        <ol class="story" id="story" aria-live="polite"></ol>
+      </div>
+      <div class="card" id="legendCard">
+        <h2>How to read the map</h2>
+        <ul class="legend" id="legend"></ul>
+        <div class="toggles">
+          <label><input type="checkbox" id="tgFriends"> Show every friend group (otherwise only the groups in the story)</label>
+          <label><input type="checkbox" id="tgSep"> Mark people separated from their friends</label>
+          <label><input type="checkbox" id="tgOther" checked> Show hand-overs of other messages</label>
+          <label><input type="checkbox" id="tgLabels"> Show phone numbers</label>
+        </div>
+      </div>
+      <div class="card" id="personCard">
+        <h2>Selected person</h2>
+        <div id="personText" class="muted">Click any dot on the map to see who they are, whether they are walking,
+          who their friends are and which phones are within reach.</div>
+      </div>
+      <div class="card" id="nowCard">
+        <h2>Whole festival, right now</h2>
+        <div id="nowText"></div>
+      </div>
+      <details class="card" id="gloss">
+        <summary>What do these words mean?</summary>
+        <dl class="gloss">
+          <dt>Person / phone</dt><dd>Each dot is one festival-goer whose phone runs LinkUp. Other attendees are not shown.</dd>
+          <dt>Walking / standing</dt><dd>Filled dots are walking between areas; hollow dots are standing at a stage, the food court and so on.</dd>
+          <dt>Friend group</dt><dd>People who came together. They usually move together, but sometimes one wanders off.</dd>
+          <dt>Separated</dt><dd>Someone who has wandered away from their friends. Most messages are written to a separated friend.</dd>
+          <dt>In reach</dt><dd>Two phones closer than the reach distance can pass messages. There is no internet and no mobile signal.</dd>
+          <dt>Copy / carrier</dt><dd>A phone holding a copy of a message "carries" it while its owner walks around, until it meets someone to pass it to.</dd>
+          <dt>Copy allowance</dt><dd>In the limited-copy methods the sender may create only a fixed number of copies. A carrier's number shows how many of those copies it controls; with 1 left it only gives the message to the friend.</dd>
+          <dt>Delivered</dt><dd>The message reached the friend's phone. The target is within 5 minutes; messages are deleted after 15 minutes.</dd>
+          <dt>Hand-over</dt><dd>One copy moving from one phone to another. Fewer hand-overs means less phone activity (this is not a battery measurement).</dd>
+        </dl>
+      </details>
+      <div class="card note" id="aboutCard"></div>
+    </aside>
+  </main>
+</div>
+<div class="tip" id="tip"></div>
+<div class="tour-back" id="tourBack" hidden></div>
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div class="card">
+    <div class="steps" id="tourSteps"></div>
+    <h3 id="tourTitle"></h3>
+    <div id="tourBody"></div>
+    <div class="row">
+      <button class="btn" id="tourSkip">Skip tour</button>
+      <span class="seg"><button class="btn" id="tourPrev">Back</button><button class="btn primary" id="tourNext">Next</button></span>
+    </div>
+  </div>
+</div>
+<div id="errors" hidden></div>
+<script>window.LINKUP = /*__LINKUP_DATA__*/null;</script>
+<script>
+(() => {
+"use strict";
+window.addEventListener("error", (e) => { const el = document.getElementById("errors"); el.textContent += "ERR: " + e.message + "\n"; });
+const D = window.LINKUP;
+if (!D) { document.body.innerHTML = "<p style='padding:24px'>No simulation data embedded. Generate this page with: python main.py explorer</p>"; return; }
+
+/* ------------------------------------------------------------------ data decoding (genuine run) */
+const META = D.meta, N = META.nodes, T0 = META.t0, T1 = META.t1, TL = META.t1 - META.t0;
+function b64(s) { const bin = atob(s); const out = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+const POS = new Uint16Array(b64(D.pos).buffer);           // centimetres, [t][n][x,y]
+const WALK = b64(D.walk);                                   // packed bits, [t][n]
+const SEP = new Int8Array(b64(D.sep).buffer);               // 0 with group, 1 separated, 2 walking back
+const GROUP = D.groups;
+const MSG = D.messages.map(m => ({ id:m[0], src:m[1], dst:m[2], created:m[3], expiry:m[4], rel:m[5] }));
+const RUNS = {};
+for (const r of D.runs) {
+  r.byMsg = new Map(); r.bySec = new Map();
+  for (const e of r.events) {
+    if (!r.byMsg.has(e[4])) r.byMsg.set(e[4], []);
+    r.byMsg.get(e[4]).push(e);
+    if (e[1] !== 3) { if (!r.bySec.has(e[0])) r.bySec.set(e[0], []); r.bySec.get(e[0]).push(e); }
+  }
+  RUNS[r.key] = r;
+}
+const MEMBERS = new Map();
+GROUP.forEach((g, n) => { if (g >= 0) { if (!MEMBERS.has(g)) MEMBERS.set(g, []); MEMBERS.get(g).push(n); } });
+
+const clampT = t => Math.max(T0, Math.min(T1 - 1, t));
+const idx = (t, n) => (clampT(t) - T0) * N + n;
+const px = (t, n) => POS[idx(t, n) * 2] / 100;
+const py = (t, n) => POS[idx(t, n) * 2 + 1] / 100;
+const walking = (t, n) => { const i = idx(t, n); return (WALK[i >> 3] >> (7 - (i & 7))) & 1; };
+const sepState = (t, n) => SEP[idx(t, n)];
+function posAt(n, tau) {
+  const a = Math.floor(tau), f = tau - a;
+  const xa = px(a, n), ya = py(a, n), xb = px(a + 1, n), yb = py(a + 1, n);
+  return [xa + (xb - xa) * f, ya + (yb - ya) * f];
+}
+const fmt = s => { s = Math.max(0, Math.round(s)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+const dur = s => { s = Math.round(s); const m = Math.floor(s / 60), r = s % 60; return m ? `${m} min ${r} s` : `${r} s`; };
+
+/* replica holders of message m at the end of second t (replayed from the event log) */
+function holders(run, m, t) {
+  const msg = MSG[m], h = new Map();
+  if (t < msg.created || t >= msg.expiry) return h;
+  h.set(msg.src, run.usesTokens ? run.budget : 0);
+  for (const e of run.byMsg.get(m) || []) {
+    if (e[0] > t) break;
+    if (e[1] === 1) { h.set(e[2], e[6]); h.set(e[3], e[5]); }
+    else if (e[1] === 2) { if (!run.keepAfterDelivery) h.delete(e[2]); }
+    else if (e[1] === 3) { h.delete(e[2]); }
+  }
+  return h;
+}
+
+/* ------------------------------------------------------------------ plain-language story */
+function relText(rel) {
+  if (rel === "separated_friends") return "their friend";
+  if (rel === "same_group_fallback") return "their friend";
+  if (rel === "random_same_group") return "their friend";
+  return "another festival-goer,";
+}
+function storyFor(run, m) {
+  const msg = MSG[m], out = [];
+  let start = `Phone ${msg.src} writes a message to ${relText(msg.rel)} phone ${msg.dst}.`;
+  if (sepState(msg.created, msg.dst)) start += ` Phone ${msg.dst} has wandered away from the group.`;
+  else if (sepState(msg.created, msg.src)) start += ` Phone ${msg.src} is the one who wandered away from the group.`;
+  if (run.usesTokens) start += ` The message may be copied at most ${run.budget} times in total.`;
+  out.push({ t: msg.created, text: start });
+  let deliveredAt = -1;
+  for (const e of run.byMsg.get(m) || []) {
+    const [t, k, a, b, , give, keep, rule] = e;
+    if (k === 1) {
+      let why = "";
+      if (rule === 3) why = ` Phone ${b} is walking, and walkers are preferred because they move around and meet more people.`;
+      else if (rule === 4) why = ` Phone ${b} is standing still. That is allowed now because the message is over ${META.fallback} seconds old.`;
+      else if (rule === 5) why = ` Phone ${b} is not one of the sender's friends.`;
+      else if (rule === 2) why = ` Phone ${b} did not have the message yet.`;
+      else if (rule === 1) why = ` Everyone who does not have it gets a copy.`;
+      let copies = "";
+      if (run.usesTokens) copies = give > 1 ? ` Phone ${b} now controls ${give} copies and can pass some on; phone ${a} keeps ${keep}.`
+                                            : ` Phone ${b} got the last copy it may hold, so it will only give it to the friend; phone ${a} keeps ${keep}.`;
+      out.push({ t, text: `Phone ${a} met phone ${b} and passed a copy.${why}${copies}` });
+    } else if (k === 2) {
+      deliveredAt = t;
+      const who = a === msg.src ? `The sender met their friend in person.` : `Phone ${a} carried a copy all the way to the friend.`;
+      const within = t - msg.created <= META.d5;
+      out.push({ t, ok: true, text: `Delivered! ${who} It took ${dur(t - msg.created)}, ${within ? "within" : "longer than"} the 5-minute target.` });
+    } else if (k === 3) {
+      out.push({ t, text: `Phone ${a}'s message storage was full, so its copy of this message was deleted.` });
+    }
+  }
+  const left = holders(run, m, msg.expiry - 1).size;
+  out.push({ t: msg.expiry, text: deliveredAt < 0
+    ? `Time is up: the message was never delivered and its ${left} remaining cop${left === 1 ? "y was" : "ies were"} deleted after 15 minutes.`
+    : `After 15 minutes the ${left} leftover cop${left === 1 ? "y was" : "ies were"} deleted. (Carriers are never told that the message already arrived.)` });
+  return out;
+}
+
+/* ------------------------------------------------------------------ state */
+const state = { time: T0, playing: false, speed: 15, msg: 0, mode: "single", methodA: "MWS", methodB: "BSW",
+                selected: -1, hover: -1, style: "minimal" };
+const runKeys = D.runs.map(r => r.key);
+if (!RUNS[state.methodA]) state.methodA = runKeys[0];
+if (!RUNS[state.methodB]) state.methodB = runKeys[Math.min(1, runKeys.length - 1)];
+const opts = { friends: false, sep: false, other: true, labels: false };
+const params = new URLSearchParams(location.hash.slice(1));
+if (params.get("style")) state.style = params.get("style");
+if (params.get("mode")) state.mode = params.get("mode");
+if (params.get("a") && RUNS[params.get("a")]) state.methodA = params.get("a");
+if (params.get("b") && RUNS[params.get("b")]) state.methodB = params.get("b");
+if (params.get("msg")) state.msg = Math.max(0, Math.min(MSG.length - 1, +params.get("msg")));
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ["bg","panel","ink","muted","line","zone","zone-line","zone-label","grid","venue-line","walk","stand",
+                   "carrier","from","to","ok","xfer","range","friend","sep","font-body","font-num","font-head"]) C[k] = cs.getPropertyValue("--" + k).trim();
+}
+
+/* ------------------------------------------------------------------ views (one or two maps) */
+const mapsEl = document.getElementById("maps");
+function makeView(side) {
+  const fig = document.createElement("figure");
+  fig.className = "card mapcard";
+  fig.innerHTML = `<figcaption><span class="lbl">${side === "A" ? "Map" : "Map, compared method"}</span><span class="mname"></span><span class="mdesc"></span>
+    <details class="how"><summary>How does it decide?</summary><p class="mlong"></p></details></figcaption>
+    <canvas aria-label="Festival map"></canvas><div class="badgeline"></div>`;
+  mapsEl.appendChild(fig);
+  const v = { side, fig, canvas: fig.querySelector("canvas"), name: fig.querySelector(".mname"), desc: fig.querySelector(".mdesc"),
+              long: fig.querySelector(".mlong"), badges: fig.querySelector(".badgeline"), w: 0, h: 0, scale: 1, pad: 12, top: 18 };
+  v.ctx = v.canvas.getContext("2d");
+  v.canvas.addEventListener("click", ev => { const n = hit(v, ev); state.selected = n === state.selected ? -1 : n; render(true); });
+  v.canvas.addEventListener("mousemove", ev => { state.hover = hit(v, ev); showTip(v, ev); });
+  v.canvas.addEventListener("mouseleave", () => { state.hover = -1; tip.style.display = "none"; });
+  return v;
+}
+const views = [makeView("A"), makeView("B")];
+const runOf = v => RUNS[v.side === "A" ? state.methodA : state.methodB];
+
+function resize() {
+  for (const v of views) {
+    // Fit the map to the card width, but never taller than ~70 % of the window.
+    const avail = v.fig.clientWidth - 2 * 16 - 2 * (parseFloat(getComputedStyle(v.fig).borderLeftWidth) || 0) || 600;
+    const maxH = Math.max(320, window.innerHeight * 0.7);
+    const w = Math.min(avail, (maxH - v.pad - v.top) * (META.venue.w / META.venue.h) + 2 * v.pad);
+    v.canvas.style.width = w + "px"; v.canvas.style.margin = "0 auto";
+    v.scale = (w - 2 * v.pad) / META.venue.w;
+    const h = Math.round(META.venue.h * v.scale) + v.pad + v.top;
+    const dpr = window.devicePixelRatio || 1;
+    v.canvas.width = Math.round(w * dpr); v.canvas.height = Math.round(h * dpr);
+    v.canvas.style.height = h + "px";
+    v.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    v.w = w; v.h = h;
+  }
+}
+const sx = (v, x) => v.pad + x * v.scale;
+const sy = (v, y) => v.top + (META.venue.h - y) * v.scale;
+function hit(v, ev) {
+  const r = v.canvas.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+  let best = -1, bd = 14 * 14;
+  for (let n = 0; n < N; n++) { const [x, y] = posAt(n, state.time); const dx = sx(v, x) - mx, dy = sy(v, y) - my; const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = n; } }
+  return best;
+}
+const tip = document.getElementById("tip");
+function showTip(v, ev) {
+  const n = state.hover;
+  if (n < 0) { tip.style.display = "none"; return; }
+  const t = Math.floor(state.time), g = GROUP[n];
+  tip.textContent = `Phone ${n} · ${walking(t, n) ? "walking" : "standing"} · ${g >= 0 ? "friend group of " + MEMBERS.get(g).length : "came alone"}${sepState(t, n) ? " · separated" : ""}`;
+  tip.style.left = (ev.pageX + 14) + "px"; tip.style.top = (ev.pageY + 12) + "px"; tip.style.display = "block";
+}
+
+/* ------------------------------------------------------------------ drawing */
+function tag(ctx, x, y, text, bg, fg) {
+  ctx.font = `700 10px ${C["font-num"]}`;
+  const w = ctx.measureText(text).width + 8;
+  ctx.fillStyle = bg; ctx.fillRect(x - w / 2, y - 7, w, 14);
+  ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, x, y + 0.5);
+}
+function arrow(ctx, x1, y1, x2, y2, frac, color, width) {
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); ctx.moveTo(x1, y1);
+  const xe = x1 + (x2 - x1) * frac, ye = y1 + (y2 - y1) * frac; ctx.lineTo(xe, ye); ctx.stroke();
+  const ang = Math.atan2(y2 - y1, x2 - x1), hs = 4 + width * 1.6;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(xe, ye);
+  ctx.lineTo(xe - hs * Math.cos(ang - 0.45), ye - hs * Math.sin(ang - 0.45));
+  ctx.lineTo(xe - hs * Math.cos(ang + 0.45), ye - hs * Math.sin(ang + 0.45)); ctx.closePath(); ctx.fill();
+}
+function drawView(v) {
+  const ctx = v.ctx, run = runOf(v), tau = state.time, t = Math.floor(tau), frac = tau - t, msg = MSG[state.msg];
+  const brut = state.style === "brutalist", cyber = state.style === "cyberpunk";
+  ctx.clearRect(0, 0, v.w, v.h);
+  ctx.fillStyle = C.panel; ctx.fillRect(0, 0, v.w, v.h);
+  if (cyber) { ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = 0; x <= META.venue.w; x += 10) { ctx.moveTo(sx(v, x), sy(v, 0)); ctx.lineTo(sx(v, x), sy(v, META.venue.h)); }
+    for (let y = 0; y <= META.venue.h; y += 10) { ctx.moveTo(sx(v, 0), sy(v, y)); ctx.lineTo(sx(v, META.venue.w), sy(v, y)); }
+    ctx.stroke(); }
+  // zones
+  for (const z of META.venue.zones) {
+    const x = sx(v, z.x0), y = sy(v, z.y1), w = (z.x1 - z.x0) * v.scale, h = (z.y1 - z.y0) * v.scale;
+    ctx.fillStyle = C.zone; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = C["zone-line"]; ctx.lineWidth = brut ? 2 : 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    // Label sits just above the area so people inside never hide it.
+    ctx.fillStyle = C["zone-label"]; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+    ctx.font = `${brut || cyber ? 700 : 600} ${Math.max(10, Math.min(13, v.scale * 2.2))}px ${brut ? C["font-head"] : C["font-body"]}`;
+    ctx.fillText(brut || cyber ? z.label.toUpperCase() : z.label, x + 1, y - 3);
+  }
+  ctx.strokeStyle = C["venue-line"]; ctx.lineWidth = brut ? 3 : 1.5;
+  ctx.strokeRect(sx(v, 0), sy(v, META.venue.h), META.venue.w * v.scale, META.venue.h * v.scale);
+
+  const P = new Array(N);
+  for (let n = 0; n < N; n++) P[n] = posAt(n, tau);
+  // friend groups: thin line from each member to the group's centre (long dashed line = separated).
+  // By default only the groups that matter for the story are drawn, to keep the map readable.
+  const focusGroups = new Set([GROUP[msg.src], GROUP[msg.dst], state.selected >= 0 ? GROUP[state.selected] : -1]);
+  {
+    for (const [g, mem] of MEMBERS) {
+      if (!opts.friends && !focusGroups.has(g)) continue;
+      let cx = 0, cy = 0, k = 0;
+      for (const n of mem) if (!sepState(t, n)) { cx += P[n][0]; cy += P[n][1]; k++; }
+      if (!k) continue; cx /= k; cy /= k;
+      for (const n of mem) {
+        const s = sepState(t, n);
+        ctx.strokeStyle = s ? C.sep : C.friend; ctx.lineWidth = s ? 1.2 : 1;
+        ctx.setLineDash(s ? [4, 4] : []); ctx.beginPath(); ctx.moveTo(sx(v, cx), sy(v, cy)); ctx.lineTo(sx(v, P[n][0]), sy(v, P[n][1])); ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+  }
+  // reach circle of the selected person
+  if (state.selected >= 0) {
+    const [x, y] = P[state.selected];
+    ctx.strokeStyle = C.range; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.arc(sx(v, x), sy(v, y), META.radius * v.scale, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+  }
+  // hand-overs of other messages during this second
+  const xfers = run.bySec.get(t) || [];
+  if (opts.other) for (const e of xfers) if (e[4] !== state.msg) {
+    arrow(ctx, sx(v, P[e[2]][0]), sy(v, P[e[2]][1]), sx(v, P[e[3]][0]), sy(v, P[e[3]][1]), Math.min(1, 0.25 + frac), C.xfer, 1);
+  }
+  // people
+  const r = Math.max(3, Math.min(6, v.scale * 0.85));
+  for (let n = 0; n < N; n++) {
+    const X = sx(v, P[n][0]), Y = sy(v, P[n][1]), w = walking(t, n);
+    if (w) { const [ox, oy] = posAt(n, Math.max(T0, tau - 2)); ctx.strokeStyle = C.walk; ctx.globalAlpha = 0.55; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(sx(v, ox), sy(v, oy)); ctx.lineTo(X, Y); ctx.stroke(); ctx.globalAlpha = 1; }
+    ctx.beginPath(); ctx.arc(X, Y, r, 0, Math.PI * 2);
+    if (w) { ctx.fillStyle = C.walk; ctx.fill(); } else { ctx.fillStyle = C.panel; ctx.fill(); ctx.strokeStyle = C.stand; ctx.lineWidth = 1.6; ctx.stroke(); }
+    if (opts.sep && sepState(t, n)) { ctx.strokeStyle = C.sep; ctx.lineWidth = 1.5; ctx.setLineDash([2, 2]);
+      ctx.beginPath(); ctx.arc(X, Y, r + 4, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+    if (opts.labels) { ctx.fillStyle = C.muted; ctx.font = `10px ${C["font-num"]}`; ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillText(n, X + r + 1, Y - 1); }
+  }
+  // the followed message: carriers, sender, friend, current hand-overs
+  const hold = holders(run, state.msg, t);
+  for (const [n, tok] of hold) {
+    const X = sx(v, P[n][0]), Y = sy(v, P[n][1]);
+    ctx.strokeStyle = C.carrier; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(X, Y, r + 4.5, 0, Math.PI * 2); ctx.stroke();
+    if (run.usesTokens) tag(ctx, X + r + 9, Y - r - 7, String(tok), C.carrier, C.panel);
+  }
+  for (const e of xfers) if (e[4] === state.msg) {
+    arrow(ctx, sx(v, P[e[2]][0]), sy(v, P[e[2]][1]), sx(v, P[e[3]][0]), sy(v, P[e[3]][1]), Math.min(1, 0.25 + frac * 1.5),
+          e[1] === 2 ? C.ok : C.carrier, 3);
+  }
+  if (t >= msg.created - 30 && t < msg.expiry) {
+    const [fx, fy] = P[msg.src], [tx, ty] = P[msg.dst];
+    const FX = sx(v, fx), FY = sy(v, fy), TX = sx(v, tx), TY = sy(v, ty);
+    ctx.fillStyle = C.from; ctx.fillRect(FX - r - 1, FY - r - 1, 2 * r + 2, 2 * r + 2);
+    tag(ctx, FX, FY + r + 10, "FROM", C.from, C.panel);
+    const dl = run.delivered[state.msg], got = dl >= 0 && dl <= t;
+    ctx.fillStyle = got ? C.ok : C.to; ctx.beginPath(); ctx.moveTo(TX, TY - r - 3); ctx.lineTo(TX + r + 3, TY); ctx.lineTo(TX, TY + r + 3); ctx.lineTo(TX - r - 3, TY); ctx.closePath(); ctx.fill();
+    tag(ctx, TX, TY + r + 10, got ? "TO ✓" : "TO", got ? C.ok : C.to, C.panel);
+  }
+  if (state.selected >= 0) { const [x, y] = P[state.selected]; ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(sx(v, x) - r - 3, sy(v, y) - r - 3, 2 * r + 6, 2 * r + 6); }
+  // status line under the map (same numbers as the event log)
+  const d = deliveredText(run), active = t >= msg.created && t < msg.expiry;
+  const key = `${run.key}|${t}|${hold.size}|${d.text}`;
+  if (v.badgeKey !== key) {
+    v.badgeKey = key;
+    v.badges.innerHTML = `<span class="badge">${active ? `Phones carrying the message: <b class="num">${hold.size}</b>` : t < msg.created ? "Message not written yet" : "Message expired"}</span>`
+      + `<span class="badge ${d.cls}">${d.text}</span>`
+      + `<span class="badge">Hand-overs of this message so far: <b class="num">${(run.byMsg.get(state.msg) || []).filter(e => e[0] <= t && e[1] !== 3).length}</b></span>`;
+  }
+}
+
+/* ------------------------------------------------------------------ side panels */
+const $ = id => document.getElementById(id);
+function legendIcon(kind) {
+  const s = (inner) => `<svg width="30" height="22" viewBox="0 0 30 22" aria-hidden="true">${inner}</svg>`;
+  switch (kind) {
+    case "walk": return s(`<line x1="3" y1="15" x2="15" y2="11" style="stroke:var(--walk);stroke-width:2;opacity:.55"/><circle cx="17" cy="11" r="5" style="fill:var(--walk)"/>`);
+    case "stand": return s(`<circle cx="15" cy="11" r="5" style="fill:var(--panel);stroke:var(--stand);stroke-width:1.6"/>`);
+    case "carrier": return s(`<circle cx="13" cy="12" r="4" style="fill:var(--walk)"/><circle cx="13" cy="12" r="8" style="fill:none;stroke:var(--carrier);stroke-width:3"/><rect x="20" y="1" width="9" height="9" style="fill:var(--carrier)"/>`);
+    case "from": return s(`<rect x="9" y="5" width="12" height="12" style="fill:var(--from)"/>`);
+    case "to": return s(`<path d="M15 3 L23 11 L15 19 L7 11 Z" style="fill:var(--to)"/>`);
+    case "ok": return s(`<path d="M15 3 L23 11 L15 19 L7 11 Z" style="fill:var(--ok)"/>`);
+    case "xfer": return s(`<line x1="2" y1="11" x2="22" y2="11" style="stroke:var(--carrier);stroke-width:3"/><path d="M28 11 L20 6 L20 16 Z" style="fill:var(--carrier)"/>`);
+    case "other": return s(`<line x1="2" y1="11" x2="23" y2="11" style="stroke:var(--xfer);stroke-width:1.5"/><path d="M28 11 L22 7.5 L22 14.5 Z" style="fill:var(--xfer)"/>`);
+    case "reach": return s(`<circle cx="15" cy="11" r="9" style="fill:none;stroke:var(--range);stroke-width:1.5;stroke-dasharray:4 3"/>`);
+    case "friend": return s(`<line x1="3" y1="16" x2="15" y2="8" style="stroke:var(--friend);stroke-width:1.5"/><line x1="15" y1="8" x2="28" y2="16" style="stroke:var(--sep);stroke-width:1.5;stroke-dasharray:3 3"/>`);
+    case "zone": return s(`<rect x="3" y="4" width="24" height="14" style="fill:var(--zone);stroke:var(--zone-line)"/>`);
+  }
+}
+function renderLegend() {
+  const items = [
+    ["walk", "Person walking (the short tail shows where they came from)"],
+    ["stand", "Person standing still"],
+    ["from", "Sender of the followed message (FROM)"],
+    ["to", "Friend the message is for (TO)"],
+    ["ok", "Friend after the message has arrived (TO ✓)"],
+    ["carrier", "Phone carrying a copy; the number shows how many copies it controls"],
+    ["xfer", "A copy being handed over right now (green = delivery)"],
+    ["other", "Hand-over of some other message"],
+    ["reach", `How far the selected phone can reach (${META.radius} m)`],
+    ["friend", "Friend-group link (dashed = wandered away)"],
+    ["zone", "Festival area"],
+  ];
+  $("legend").innerHTML = items.map(([k, t]) => `<li>${legendIcon(k)}<span>${t}</span></li>`).join("");
+}
+function relLabel(m) { return (m.rel === "separated_friends" || m.rel === "same_group_fallback" || m.rel === "random_same_group") ? "friend" : "person"; }
+function renderMsgSelect() {
+  $("msgSel").innerHTML = MSG.map(m => `<option value="${m.id}">#${m.id + 1} · phone ${m.src} → ${relLabel(m)} ${m.dst} · sent ${fmt(m.created)}</option>`).join("");
+  $("msgSel").value = state.msg;
+}
+function renderMethodSelects() {
+  const o = D.runs.map(r => `<option value="${r.key}">${r.name}</option>`).join("");
+  $("methodA").innerHTML = o; $("methodB").innerHTML = o;
+  $("methodA").value = state.methodA; $("methodB").value = state.methodB;
+}
+function deliveredText(run) {
+  const dl = run.delivered[state.msg], m = MSG[state.msg];
+  if (dl < 0) return { text: "Never delivered (expired)", cls: "wait" };
+  if (dl > state.time) return { text: "Not delivered yet", cls: "wait" };
+  return { text: `Delivered after ${fmt(dl - m.created)}${dl - m.created <= META.d5 ? " ✓ within 5 min" : " (over 5 min)"}`, cls: "ok" };
+}
+let lastStoryKey = "";
+function renderPanels() {
+  const t = Math.floor(state.time), m = MSG[state.msg], runA = RUNS[state.methodA];
+  $("clock").textContent = fmt(state.time);
+  const age = state.time - m.created;
+  $("ageTxt").innerHTML = age < 0 ? `Message is written in <b class="num">${fmt(-age)}</b>`
+    : age < m.expiry - m.created ? `Message age <b class="num">${fmt(age)}</b> &middot; target 05:00 &middot; deleted at 15:00` : `Message has expired`;
+  const rel = relLabel(m) === "friend" ? "friend" : "another festival-goer";
+  const sepNow = t >= m.created ? (sepState(t, m.dst) ? `Right now phone ${m.dst} is away from their group.` : sepState(t, m.src) ? `Right now phone ${m.src} is away from their group.` : "Right now both are with their group.") : "";
+  $("msgText").innerHTML = `<p style="margin:0 0 6px">Phone <b class="num">${m.src}</b> writes to ${rel} phone <b class="num">${m.dst}</b> at <b class="num">${fmt(m.created)}</b>.</p>
+    <p class="muted" style="margin:0;font-size:13.5px">${sepNow} Message ${m.id + 1} of ${MSG.length}${m.id === 0 ? " (the first one written; pick any other above)" : ""}.</p>`;
+  const vs = state.mode === "compare" ? [RUNS[state.methodA], RUNS[state.methodB]] : [runA];
+  $("msgBadges").innerHTML = vs.map(r => { const d = deliveredText(r); return `<span class="badge ${d.cls}">${r.name}: ${d.text}</span>`; }).join("");
+  // story (first view's method)
+  const story = storyFor(runA, state.msg).filter(s => s.t <= t);
+  const key = state.methodA + "|" + state.msg + "|" + story.length;
+  if (key !== lastStoryKey) {
+    lastStoryKey = key;
+    $("story").innerHTML = story.length ? story.slice().reverse().map((s, i) => `<li class="${i === 0 ? "latest" : ""}"><time>${fmt(s.t)}</time><span>${s.text}</span></li>`).join("")
+      : `<li><time>--:--</time><span class="muted">Nothing yet. The message is written at ${fmt(m.created)}. Press Play.</span></li>`;
+    $("storyCard").querySelector("h2").textContent = state.mode === "compare" ? `What has happened so far (${runA.name})` : "What has happened so far";
+  }
+  // whole-festival counters
+  const ti = Math.max(0, Math.min(TL - 1, t - T0));
+  const written = MSG.filter(x => x.created <= t).length;
+  const rows = vs.map(r => `<tr><td>${r.name}</td><td class="num">${r.timeline.delivered[ti]}</td><td class="num">${r.timeline.replicas[ti]}</td></tr>`).join("");
+  $("nowText").innerHTML = `<p style="margin:0 0 8px">Messages written so far: <b class="num">${written}</b> of ${MSG.length} &middot; walking now: <b class="num">${countWalking(t)}</b> of ${N} people</p>
+    <table class="cmp"><thead><tr><th>Method</th><th>Delivered</th><th>Copies on phones</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="note" style="margin:10px 0 4px">Final result of this run (all ${MSG.length} messages):</p>
+    <table class="cmp"><thead><tr><th>Method</th><th>Within 5 min</th><th>Within 15 min</th><th>Hand-overs per message</th></tr></thead><tbody>
+    ${vs.map(r => `<tr><td>${r.name}</td><td class="num">${r.metrics.d5.toFixed(1)}%</td><td class="num">${r.metrics.d15.toFixed(1)}%</td><td class="num">${r.metrics.t.toFixed(1)}</td></tr>`).join("")}
+    </tbody></table><p class="note" style="margin-top:8px">One simulated run only. Conclusions need the averages over many runs in the experiment results.</p>`;
+  renderPerson(t);
+}
+function countWalking(t) { let k = 0; for (let n = 0; n < N; n++) k += walking(t, n); return k; }
+function renderPerson(t) {
+  const n = state.selected;
+  if (n < 0) return;
+  const g = GROUP[n], run = RUNS[state.methodA];
+  const [x0, y0] = posAt(n, Math.max(T0, t - 1)), [x1, y1] = posAt(n, t);
+  const speed = Math.hypot(x1 - x0, y1 - y0);
+  const near = []; for (let k = 0; k < N; k++) if (k !== n && Math.hypot(px(t, k) - px(t, n), py(t, k) - py(t, n)) <= META.radius) near.push(k);
+  const carried = []; for (const m of MSG) if (holders(run, m.id, t).has(n)) carried.push(m.id + 1);
+  const friends = g >= 0 ? MEMBERS.get(g).filter(k => k !== n) : [];
+  const zone = META.venue.zones.find(z => x1 >= z.x0 && x1 <= z.x1 && y1 >= z.y0 && y1 <= z.y1);
+  $("personText").classList.remove("muted");
+  $("personText").innerHTML = `<dl class="kv">
+    <dt>Phone</dt><dd>${n}</dd>
+    <dt>Doing</dt><dd>${walking(t, n) ? `walking (${speed.toFixed(1)} m/s)` : "standing still"}</dd>
+    <dt>Where</dt><dd>${zone ? zone.label : "walkways between areas"}</dd>
+    <dt>Friends</dt><dd>${g >= 0 ? `group of ${friends.length + 1}: phones ${friends.join(", ")}` : "came alone"}</dd>
+    <dt>With group?</dt><dd>${g < 0 ? "n/a" : sepState(t, n) === 1 ? "no, wandered off" : sepState(t, n) === 2 ? "no, walking back to them" : "yes"}</dd>
+    <dt>In reach</dt><dd>${near.length ? `${near.length} phone${near.length > 1 ? "s" : ""} (${near.slice(0, 12).join(", ")}${near.length > 12 ? ", ..." : ""})` : "nobody"}</dd>
+    <dt>Carrying</dt><dd>${carried.length ? `copies of ${carried.length} message${carried.length > 1 ? "s" : ""} (${run.name})` : `no messages (${run.name})`}</dd>
+  </dl><p class="note" style="margin:8px 0 0">Click the same person again to clear.</p>`;
+}
+
+/* ------------------------------------------------------------------ timeline */
+function renderTrack() {
+  const m = MSG[state.msg], scrub = $("scrub"), track = $("track");
+  scrub.min = T0; scrub.max = T1 - 1;
+  const pct = t => ((t - T0) / (T1 - 1 - T0) * 100) + "%";
+  track.querySelectorAll(".mark, .band").forEach(e => e.remove());
+  const band = document.createElement("div"); band.className = "band";
+  band.style.left = pct(m.created); band.style.width = `calc(${pct(Math.min(T1 - 1, m.created + META.d5))} - ${pct(m.created)})`;
+  track.appendChild(band);
+  const mk = (t, text, color, row) => { const el = document.createElement("div"); el.className = "mark" + (row ? " bottom r" + row : ""); el.style.left = pct(t); el.style.color = color; el.innerHTML = row ? `<i></i>${text}` : `${text}<i></i>`; track.appendChild(el); };
+  mk(m.created, "sent", C.ink, 0);
+  mk(m.expiry, "deleted", C.muted, 0);
+  const vs = state.mode === "compare" ? [state.methodA, state.methodB] : [state.methodA];
+  vs.forEach((k, i) => { const dl = RUNS[k].delivered[state.msg];
+    mk(dl >= 0 ? dl : m.expiry, dl >= 0 ? `✓ ${vs.length > 1 ? (i ? "right map" : "left map") : "delivered"}` : `✗ ${vs.length > 1 ? (i ? "right" : "left") + " map: " : ""}never delivered`,
+       dl >= 0 ? C.ok : C.sep, i + 1); });
+}
+function setTime(t) { state.time = Math.max(T0, Math.min(T1 - 1, t)); $("scrub").value = Math.floor(state.time); render(true); }
+function setPlaying(p) { state.playing = p; $("playBtn").innerHTML = p ? "&#x23F8; Pause" : "&#x25B6; Play"; if (p) { last = performance.now(); requestAnimationFrame(loop); } }
+let last = 0;
+function loop(now) {
+  if (!state.playing) return;
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  state.time = Math.min(T1 - 1, state.time + dt * state.speed);
+  $("scrub").value = Math.floor(state.time);
+  render(false);
+  if (state.time >= T1 - 1) { setPlaying(false); return; }
+  requestAnimationFrame(loop);
+}
+
+/* ------------------------------------------------------------------ render orchestration */
+let panelTick = 0;
+function render(full) {
+  for (const v of views) if (!v.fig.hidden) drawView(v);
+  if (full || ++panelTick % 6 === 0) renderPanels();
+}
+function applyMode() {
+  mapsEl.classList.toggle("compare", state.mode === "compare");
+  views[1].fig.hidden = state.mode !== "compare";
+  $("methodBWrap").hidden = state.mode !== "compare";
+  $("methodALbl").textContent = state.mode === "compare" ? "Left map" : "Method";
+  document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
+  for (const v of views) { const r = runOf(v); v.name.textContent = r.name; v.desc.textContent = r.oneLine;
+    v.long.textContent = r.summary + " Research name: " + r.technical + "."; v.badgeKey = ""; }
+  resize(); renderTrack(); lastStoryKey = ""; render(true);
+}
+function applyStyle(s) {
+  if (!["minimal", "brutalist", "cyberpunk"].includes(s)) s = "minimal";
+  state.style = s; document.documentElement.dataset.style = s;
+  document.querySelectorAll("[data-style-btn]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.styleBtn === s)));
+  try { localStorage.setItem("linkup-style", s); } catch (e) { /* storage unavailable */ }
+  readColors(); renderTrack(); render(true);
+}
+function selectMessage(id) {
+  state.msg = +id; state.selected = MSG[state.msg].src; lastStoryKey = "";
+  renderTrack(); setTime(MSG[state.msg].created - 5);
+}
+
+/* ------------------------------------------------------------------ guided tour */
+const TOUR = [
+  { el: null, title: "Welcome to the festival", body: "This is a replay of a real simulation run. Each dot is a festival-goer whose phone runs LinkUp. There is <b>no mobile signal</b>, so phones pass messages directly to each other whenever two people come within " + META.radius + " metres." },
+  { el: "maps", title: "The map", body: "Shaded boxes are the stages, food court, toilets and entrance. <b>Filled dots are walking</b>, hollow dots are standing. Thin lines join the sender's and the friend's group; a <b>dashed red line</b> means that person has wandered away from their friends." },
+  { el: "msgCard", title: "One message to follow", body: "We follow one message: the <b>FROM</b> square writes to a friend (the <b>TO</b> diamond) who has been separated. Thick rings show which phones carry a copy right now." },
+  { el: "controls", title: "Choose how phones share", body: "Pick a method, or press <b>Compare two</b> to see two methods side by side on exactly the same crowd and the same message." },
+  { el: "timeline", title: "Play the clock", body: "Press <b>Play</b> and change the speed. The shaded strip is the 5-minute target. You can drag the slider to any moment." },
+  { el: "storyCard", title: "The story, in plain words", body: "Every hand-over is explained here as it happens: who passed a copy to whom, and why. Click any dot to learn about that person. Use <b>What do these words mean?</b> at the bottom for definitions." },
+];
+let tourStep = 0;
+function showTour(i) {
+  tourStep = i;
+  document.querySelectorAll(".spot").forEach(e => e.classList.remove("spot"));
+  const s = TOUR[i], box = $("tour");
+  $("tourBack").hidden = false; box.hidden = false;
+  $("tourSteps").textContent = `Step ${i + 1} of ${TOUR.length}`;
+  $("tourTitle").textContent = s.title; $("tourBody").innerHTML = s.body;
+  $("tourPrev").disabled = i === 0; $("tourNext").textContent = i === TOUR.length - 1 ? "Start exploring" : "Next";
+  if (s.el) {
+    const el = $(s.el); el.classList.add("spot"); el.scrollIntoView({ block: "nearest" });
+    const r = el.getBoundingClientRect(), bw = box.offsetWidth, bh = box.offsetHeight;
+    let top = r.bottom + 12, left = Math.min(window.innerWidth - bw - 16, Math.max(16, r.left));
+    if (top + bh > window.innerHeight - 8) top = Math.max(16, r.top - bh - 12);
+    box.style.top = top + "px"; box.style.left = left + "px";
+  } else { box.style.top = "18%"; box.style.left = `calc(50% - ${box.offsetWidth / 2}px)`; }
+  $("tourNext").focus();
+}
+function endTour() {
+  $("tour").hidden = true; $("tourBack").hidden = true;
+  document.querySelectorAll(".spot").forEach(e => e.classList.remove("spot"));
+  try { localStorage.setItem("linkup-tour-seen", "1"); } catch (e) { /* storage unavailable */ }
+}
+
+/* ------------------------------------------------------------------ wiring */
+document.querySelectorAll("[data-style-btn]").forEach(b => b.addEventListener("click", () => applyStyle(b.dataset.styleBtn)));
+document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => { state.mode = b.dataset.mode; applyMode(); }));
+document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => {
+  state.speed = +b.dataset.speed; document.querySelectorAll("[data-speed]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); }));
+$("methodA").addEventListener("change", e => { state.methodA = e.target.value; applyMode(); });
+$("methodB").addEventListener("change", e => { state.methodB = e.target.value; applyMode(); });
+$("msgSel").addEventListener("change", e => selectMessage(e.target.value));
+$("playBtn").addEventListener("click", () => setPlaying(!state.playing));
+$("restartBtn").addEventListener("click", () => { setPlaying(false); setTime(MSG[state.msg].created - 5); });
+$("backBtn").addEventListener("click", () => setTime(Math.floor(state.time) - 1));
+$("fwdBtn").addEventListener("click", () => setTime(Math.floor(state.time) + 1));
+$("scrub").addEventListener("input", e => setTime(+e.target.value));
+$("helpBtn").addEventListener("click", () => showTour(0));
+$("tourNext").addEventListener("click", () => tourStep < TOUR.length - 1 ? showTour(tourStep + 1) : endTour());
+$("tourPrev").addEventListener("click", () => showTour(Math.max(0, tourStep - 1)));
+$("tourSkip").addEventListener("click", endTour);
+$("tourBack").addEventListener("click", endTour);
+for (const [id, key] of [["tgFriends", "friends"], ["tgSep", "sep"], ["tgOther", "other"], ["tgLabels", "labels"]])
+  $(id).addEventListener("change", e => { opts[key] = e.target.checked; render(true); });
+document.addEventListener("keydown", e => {
+  if (!$("tour").hidden) { if (e.key === "Escape") endTour(); return; }
+  if (e.target.tagName === "SELECT" || e.target.tagName === "INPUT" && e.target.type !== "range") return;
+  if (e.code === "Space") { e.preventDefault(); setPlaying(!state.playing); }
+  else if (e.key === "ArrowRight") { e.preventDefault(); setTime(Math.floor(state.time) + (e.shiftKey ? 10 : 1)); }
+  else if (e.key === "ArrowLeft") { e.preventDefault(); setTime(Math.floor(state.time) - (e.shiftKey ? 10 : 1)); }
+});
+window.addEventListener("resize", () => { resize(); render(true); });
+
+/* ------------------------------------------------------------------ start */
+$("radiusTxt").textContent = META.radius;
+$("aboutCard").innerHTML = `<b>About this replay.</b> Genuine output of the LinkUp simulator: ${N} phones, development seed ${META.seed},
+  reach ${META.radius} m, copy limit ${META.copyBudget}, ${MSG.length} messages. All methods ran on the same crowd and the same messages.
+  Movement within each second is drawn as a straight line, as in the model. Synthetic venue, idealised radio; not a real festival.
+  <br><span class="num">scenario ${META.scenarioHash} &middot; code ${META.codeVersion} &middot; generated ${META.generatedAt}</span>`;
+let savedStyle = null; try { savedStyle = localStorage.getItem("linkup-style"); } catch (e) { /* storage unavailable */ }
+renderLegend(); renderMsgSelect(); renderMethodSelects();
+document.querySelectorAll("[data-speed]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.speed === state.speed)));
+applyStyle(params.get("style") || savedStyle || META.defaultStyle || state.style);
+state.selected = MSG[state.msg].src;
+applyMode();
+setTime(params.get("t") ? +params.get("t") : MSG[state.msg].created - 5);
+let seen = null; try { seen = localStorage.getItem("linkup-tour-seen"); } catch (e) { /* storage unavailable */ }
+if (params.get("tour") === "1" || (params.get("tour") !== "0" && !seen)) showTour(0);
+if (params.get("play") === "1") setPlaying(true);
+document.body.dataset.ready = "1";
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# Generated simulation outputs (regenerable from configs + seeds)
+results/*/raw/
+results/*/scenarios/
+results/*/processed/
+results/*/figures/
+results/*/reports/
+results/*/logs/
+results/benchmark/
+results/smoke/
+results/development/
+
+# Keep folder skeleton
+!results/**/.gitkeep
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+results/explorer/

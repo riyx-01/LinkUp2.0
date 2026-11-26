@@ -1,0 +1,14 @@
+{
+  "extends": "default.json",
+  "description": "PROPOSED confirmatory configuration. It is NOT frozen: the researcher/mentor must review the pilot report, approve the H2 margin and repetition count, and run `python main.py freeze --approver \"<name>\"` before `python main.py run --phase confirmatory` will execute. Any edit after freezing invalidates the approval record.",
+  "phase": "confirmatory",
+  "seeds": [1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010,
+            1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020,
+            1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030],
+  "output": {
+    "event_log": false,
+    "save_scenarios": true,
+    "save_positions": false,
+    "message_results": true
+  }
+}

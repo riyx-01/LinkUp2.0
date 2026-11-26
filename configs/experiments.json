@@ -1,0 +1,111 @@
+{
+  "description": "Focused experiment matrix (not a full factorial). Arms are dotted-path overrides applied to the phase config. Behaviourally identical arms are detected through the effective-configuration hash and run only once (e.g. Full MWS at 100 nodes is shared by E1, E2, E3, E4 and E5).",
+  "experiments": {
+    "E1": {
+      "title": "Main comparison across densities",
+      "purpose": "H1-H4 (RQ2-RQ4)",
+      "role": "confirmatory",
+      "priority": 1,
+      "base": {"routing.copy_budget": 8, "communication.radius_m": 10,
+               "motion_classification.error_rate": 0.0,
+               "traffic.workload_type": "separated_friends"},
+      "grid": {
+        "nodes.node_count": [50, 100, 200],
+        "routing.algorithm": ["DirectDelivery", "Epidemic", "BSW", "MWS"]
+      }
+    },
+    "E2": {
+      "title": "Copy-budget sensitivity",
+      "purpose": "RQ5 (copy budget)",
+      "role": "supporting",
+      "priority": 3,
+      "base": {"nodes.node_count": 100},
+      "grid": {
+        "routing.algorithm": ["BSW", "MWS"],
+        "routing.copy_budget": [4, 8, 16]
+      }
+    },
+    "E3": {
+      "title": "Rule ablation",
+      "purpose": "RQ5 (individual rules)",
+      "role": "supporting",
+      "priority": 4,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8},
+      "arms": [
+        {"label": "BSW (no rules)", "routing.algorithm": "BSW"},
+        {"label": "R1 only", "routing.algorithm": "MWS",
+         "routing.mws.friend_exclusion": true, "routing.mws.walker_preference": false, "routing.mws.patience_fallback": false},
+        {"label": "R2 only", "routing.algorithm": "MWS",
+         "routing.mws.friend_exclusion": false, "routing.mws.walker_preference": true, "routing.mws.patience_fallback": false},
+        {"label": "R1+R2", "routing.algorithm": "MWS",
+         "routing.mws.friend_exclusion": true, "routing.mws.walker_preference": true, "routing.mws.patience_fallback": false},
+        {"label": "R2+R3", "routing.algorithm": "MWS",
+         "routing.mws.friend_exclusion": false, "routing.mws.walker_preference": true, "routing.mws.patience_fallback": true},
+        {"label": "Full MWS (R1+R2+R3)", "routing.algorithm": "MWS",
+         "routing.mws.friend_exclusion": true, "routing.mws.walker_preference": true, "routing.mws.patience_fallback": true}
+      ]
+    },
+    "E4": {
+      "title": "Immediate vs historical motion signal",
+      "purpose": "H5 (RQ6)",
+      "role": "confirmatory",
+      "priority": 2,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8, "routing.algorithm": "MWS"},
+      "arms": [
+        {"label": "Full MWS - immediate", "routing.mws.motion_signal": "immediate"},
+        {"label": "Full MWS - historical 300 s", "routing.mws.motion_signal": "historical",
+         "routing.mws.history_window_s": 300, "routing.mws.history_threshold": 0.5}
+      ]
+    },
+    "E5": {
+      "title": "Motion-classification robustness",
+      "purpose": "RQ5 (classification errors)",
+      "role": "supporting",
+      "priority": 5,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8,
+               "motion_classification.error_model": "independent"},
+      "arms": [
+        {"label": "BSW", "routing.algorithm": "BSW"},
+        {"label": "MWS 0% error", "routing.algorithm": "MWS", "motion_classification.error_rate": 0.0},
+        {"label": "MWS 10% error", "routing.algorithm": "MWS", "motion_classification.error_rate": 0.1},
+        {"label": "MWS 20% error", "routing.algorithm": "MWS", "motion_classification.error_rate": 0.2}
+      ]
+    },
+    "E6": {
+      "title": "Generalisation to random source-destination workload",
+      "purpose": "RQ5/RQ6 (workload generalisation)",
+      "role": "supporting",
+      "priority": 6,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8},
+      "grid": {
+        "traffic.workload_type": ["separated_friends", "random"],
+        "routing.algorithm": ["BSW", "MWS"]
+      }
+    },
+    "X1": {
+      "title": "OPTIONAL: communication-radius sensitivity",
+      "purpose": "Exploratory extension",
+      "role": "exploratory",
+      "optional": true,
+      "priority": 10,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8},
+      "grid": {
+        "communication.radius_m": [5, 10, 15],
+        "routing.algorithm": ["BSW", "MWS"]
+      }
+    },
+    "X2": {
+      "title": "OPTIONAL: temporally correlated classification errors",
+      "purpose": "Exploratory extension",
+      "role": "exploratory",
+      "optional": true,
+      "priority": 11,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8, "routing.algorithm": "MWS",
+               "motion_classification.error_model": "correlated",
+               "motion_classification.mean_burst_s": 5},
+      "grid": {
+        "motion_classification.error_rate": [0.1, 0.2]
+      }
+    }
+  }
+}
