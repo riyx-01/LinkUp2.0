@@ -180,6 +180,15 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
     </div>
   </header>
 
+    <!-- Main Application Navigation Tabs -->
+    <nav class="app-nav" style="display:flex; gap:12px; margin: 16px 0 20px; border-bottom: 2px solid var(--line); padding-bottom: 10px;">
+      <button id="tabBtnReplay" class="btn primary" style="font-size:15px; font-weight:700; padding:8px 22px; cursor:pointer;" onclick="switchTab('replay')">🎪 Watch a Festival</button>
+      <button id="tabBtnResults" class="btn" style="font-size:15px; font-weight:700; padding:8px 22px; cursor:pointer;" onclick="switchTab('results')">📊 Experiment Results (Confirmatory)</button>
+    </nav>
+    <div id="replaySection">
+    
+
+
   <section class="controls" id="controls">
     <label><span class="lbl">Message to follow</span><select id="msgSel" aria-label="Message to follow"></select></label>
     <div><span class="lbl">View</span><br>
@@ -815,5 +824,170 @@ if (params.get("play") === "1") setPlaying(true);
 document.body.dataset.ready = "1";
 })();
 </script>
+
+    </div> <!-- End replaySection -->
+
+    <!-- Experiment Results Tab Content -->
+    <div id="resultsSection" style="display:none; padding: 10px 0;">
+      <section class="card" style="background:var(--panel); border:var(--bw) solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:24px; box-shadow:var(--shadow);">
+        <h2 style="font-size:22px; margin-bottom:10px;">📊 LinkUp Confirmatory Experiment Results</h2>
+        <p class="muted" style="margin-bottom:18px;">
+          Empirical evaluation over <b>1,350 independent simulation runs</b> across 30 locked confirmatory seeds (1001–1030).
+          Evaluating <b>Motion-aware Walker-preferential Spray-and-Wait (MWS)</b> against Direct Delivery, Epidemic Routing, and Binary Spray-and-Wait (BSW).
+        </p>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:26px;">
+          <div style="border:1px solid var(--line); border-radius:var(--radius); padding:14px; background:var(--soft);">
+            <div class="lbl">Total Planned & Executed</div>
+            <div class="num" style="font-size:24px; font-weight:700;">1,350 / 1,350</div>
+            <div style="font-size:12px; color:var(--ok);">0 failed (100% success rate)</div>
+          </div>
+          <div style="border:1px solid var(--line); border-radius:var(--radius); padding:14px; background:var(--soft);">
+            <div class="lbl">Replication Seeds</div>
+            <div class="num" style="font-size:24px; font-weight:700;">30 Seeds</div>
+            <div style="font-size:12px; color:var(--muted);">Phase-locked (1001–1030)</div>
+          </div>
+          <div style="border:1px solid var(--line); border-radius:var(--radius); padding:14px; background:var(--soft);">
+            <div class="lbl">Protocol Integrity</div>
+            <div class="num" style="font-size:24px; font-weight:700; color:var(--ok);">10 / 10 PASS</div>
+            <div style="font-size:12px; color:var(--muted);">Token & mobility verified</div>
+          </div>
+          <div style="border:1px solid var(--line); border-radius:var(--radius); padding:14px; background:var(--soft);">
+            <div class="lbl">Code Provenance</div>
+            <div class="num" style="font-size:14px; font-weight:700; margin-top:6px;">1.0.0+src.93e0046b68</div>
+            <div style="font-size:12px; color:var(--muted);">Cryptographically frozen</div>
+          </div>
+        </div>
+
+        <h3 style="font-size:18px; margin: 24px 0 12px;">Pre-Specified Formal Hypothesis Tests</h3>
+        <div style="overflow-x:auto; margin-bottom:26px;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:14px;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--line); background:var(--soft);">
+                <th style="padding:10px 14px;">Hypothesis</th>
+                <th style="padding:10px 14px;">Description</th>
+                <th style="padding:10px 14px;">Mean Difference</th>
+                <th style="padding:10px 14px;">Adjusted p (p_holm)</th>
+                <th style="padding:10px 14px;">Formal Decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px; font-weight:700;">H1</td>
+                <td style="padding:10px 14px;">Timely delivery: MWS improves 5-min delivery (D5) over BSW</td>
+                <td style="padding:10px 14px;" class="num">+0.85 pp</td>
+                <td style="padding:10px 14px;" class="num">0.0719</td>
+                <td style="padding:10px 14px;"><span style="background:var(--soft); padding:3px 8px; border-radius:4px;">Fail to reject null</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line); background:rgba(21,128,61,0.08);">
+                <td style="padding:10px 14px; font-weight:700;">H2</td>
+                <td style="padding:10px 14px;">Reliability: MWS 15-min delivery (D15) is non-inferior to BSW (5pp margin)</td>
+                <td style="padding:10px 14px;" class="num">-0.02 pp</td>
+                <td style="padding:10px 14px; color:var(--ok); font-weight:700;" class="num">8.50e-43</td>
+                <td style="padding:10px 14px; color:var(--ok); font-weight:700;">✅ Non-inferiority established</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px; font-weight:700;">H3</td>
+                <td style="padding:10px 14px;">Transfer efficiency: MWS reduces hand-overs per message (T) vs BSW</td>
+                <td style="padding:10px 14px;" class="num">-0.0009</td>
+                <td style="padding:10px 14px;" class="num">0.2309</td>
+                <td style="padding:10px 14px;"><span style="background:var(--soft); padding:3px 8px; border-radius:4px;">Fail to reject null</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px; font-weight:700;">H4</td>
+                <td style="padding:10px 14px;">Density effect: 5-min benefit differs significantly across densities (Welch ANOVA)</td>
+                <td style="padding:10px 14px;" class="num">F-test</td>
+                <td style="padding:10px 14px;" class="num">0.8949</td>
+                <td style="padding:10px 14px;"><span style="background:var(--soft); padding:3px 8px; border-radius:4px;">Fail to reject null</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line); background:rgba(21,128,61,0.08);">
+                <td style="padding:10px 14px; font-weight:700;">H5</td>
+                <td style="padding:10px 14px;">Motion signal: Immediate walking state vs smoothed historical variant</td>
+                <td style="padding:10px 14px;" class="num">+6.00 pp</td>
+                <td style="padding:10px 14px; color:var(--ok); font-weight:700;" class="num">3.19e-07</td>
+                <td style="padding:10px 14px; color:var(--ok); font-weight:700;">✅ Reject null (Significant benefit)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:18px; margin: 24px 0 12px;">Main Algorithm Comparison (Experiment E1, 30 Replications)</h3>
+        <div style="overflow-x:auto; margin-bottom:26px;">
+          <table style="width:100%; border-collapse:collapse; text-align:left; font-size:14px;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--line); background:var(--soft);">
+                <th style="padding:10px 14px;">Algorithm</th>
+                <th style="padding:10px 14px;">Nodes (N)</th>
+                <th style="padding:10px 14px;">5-Min Delivery (D5)</th>
+                <th style="padding:10px 14px;">15-Min Delivery (D15)</th>
+                <th style="padding:10px 14px;">Copies Handed Over (T)</th>
+                <th style="padding:10px 14px;">Median Latency</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px; font-weight:700;">Direct Delivery</td>
+                <td style="padding:10px 14px;" class="num">50</td>
+                <td style="padding:10px 14px;" class="num">48.7%</td>
+                <td style="padding:10px 14px;" class="num">96.3%</td>
+                <td style="padding:10px 14px;" class="num">0.96</td>
+                <td style="padding:10px 14px;" class="num">301.5 s</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px; font-weight:700;">Epidemic Routing</td>
+                <td style="padding:10px 14px;" class="num">50</td>
+                <td style="padding:10px 14px;" class="num">93.1%</td>
+                <td style="padding:10px 14px;" class="num">100.0%</td>
+                <td style="padding:10px 14px;" class="num">48.99</td>
+                <td style="padding:10px 14px;" class="num">123.3 s</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line);">
+                <td style="padding:10px 14px; font-weight:700;">Binary Spray-and-Wait (BSW)</td>
+                <td style="padding:10px 14px;" class="num">50</td>
+                <td style="padding:10px 14px;" class="num">73.2%</td>
+                <td style="padding:10px 14px;" class="num">99.9%</td>
+                <td style="padding:10px 14px;" class="num">8.00</td>
+                <td style="padding:10px 14px;" class="num">174.9 s</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--line); font-weight:700; color:var(--carrier);">
+                <td style="padding:10px 14px;">MWS (Motion-aware Walker-pref)</td>
+                <td style="padding:10px 14px;" class="num">50</td>
+                <td style="padding:10px 14px;" class="num">74.3%</td>
+                <td style="padding:10px 14px;" class="num">99.9%</td>
+                <td style="padding:10px 14px;" class="num">8.00</td>
+                <td style="padding:10px 14px;" class="num">177.9 s</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:20px; padding:16px; border-left:4px solid var(--carrier); background:var(--soft); border-radius:0 var(--radius) var(--radius) 0;">
+          <b>Key Finding:</b> MWS successfully achieves non-inferior reliable delivery (99.9% at D15) matching BSW while preserving strict resource conservation (exactly 8 copies per message), and immediate motion sensing yields a statistically significant +6.0 percentage point advantage over historical smoothing ($p < 0.001$).
+        </div>
+      </section>
+    </div>
+
+    <!-- Script to toggle tabs -->
+    <script>
+      function switchTab(tab) {
+        const replay = document.getElementById('replaySection');
+        const results = document.getElementById('resultsSection');
+        const btnReplay = document.getElementById('tabBtnReplay');
+        const btnResults = document.getElementById('tabBtnResults');
+
+        if (tab === 'results') {
+          replay.style.display = 'none';
+          results.style.display = 'block';
+          btnReplay.classList.remove('primary');
+          btnResults.classList.add('primary');
+        } else {
+          results.style.display = 'none';
+          replay.style.display = 'block';
+          btnResults.classList.remove('primary');
+          btnReplay.classList.add('primary');
+        }
+      }
+    </script>
+    
 </body>
 </html>
