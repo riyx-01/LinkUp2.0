@@ -58,6 +58,8 @@ changed without editing source code; `simulator/config.py::validate_config` reje
 | `statistics.bootstrap_seed` | 20240531 | separate reproducible bootstrap seed |
 | `statistics.planned_repetitions` | 30 | must equal the number of confirmatory seeds when freezing |
 | `statistics.h4_model` | independent_groups_welch | or `repeated_measures_gg` |
+| `statistics.zero_variance_rule` | inconclusive | identical paired differences -> non-computable, no p-value |
+| `statistics.meaningful_target_effects_pp` | {"H1": null, "H5": null} | smallest meaningful D5 differences; must be set before `freeze` |
 | `output.event_log` | false | event logs for every run (large) |
 | `output.save_scenarios` | true | save shared scenarios (.npz) |
 | `output.save_positions` | true/false | include positions in saved scenarios |

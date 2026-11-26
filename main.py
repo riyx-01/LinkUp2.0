@@ -57,7 +57,7 @@ def cmd_smoke(args) -> None:
         c = apply_overrides(cfg, {"routing.algorithm": alg})
         m1 = run_simulation(c, scen_a).metrics
         m2 = run_simulation(c, scen_b).metrics
-        same = all(m1[k] == m2[k] for k in m1 if k != "routing_runtime_s")
+        same = all(m1[k] == m2[k] or (m1[k] != m1[k] and m2[k] != m2[k]) for k in m1 if k != "routing_runtime_s")
         print(f"  {variant_label(c):26s} D5={m1['d5_percent']:6.2f}%  D15={m1['d15_percent']:6.2f}%  "
               f"T={m1['transfers_per_message']:7.2f}  tokens_ok={m1['token_conservation_ok']}  "
               f"reproducible={same}")

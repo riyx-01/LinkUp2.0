@@ -95,12 +95,12 @@ def one_sample_test(diffs, alternative: str = "greater", null_value: float = 0.0
     res["computable"] = bool(computable)
     res["degenerate_zero_variance"] = bool(n >= 2 and res["sd"] == 0)
     if res["degenerate_zero_variance"]:
-        # Pre-specified rule: every paired difference is identical, so the t statistic is undefined.
-        # On (or inside) the null side the data are fully consistent with H0 (p = 1); strictly on the
-        # alternative side the evidence is unanimous (p = 0). Always flagged in reports.
-        gap = res["mean_diff"] - null_value
-        on_alt = gap > 0 if alternative == "greater" else gap < 0 if alternative == "less" else gap != 0
-        res.update({"t": np.nan, "df": n - 1, "p_raw": 0.0 if on_alt else 1.0, "computable": True})
+        # Every paired difference is identical: the t statistic and its p-value are undefined. The test
+        # is flagged as NOT computable (decision: "Evidence is statistically inconclusive"). No p-value
+        # is assigned; the observed difference, n and the zero-variance condition are reported instead.
+        # Any alternative inferential procedure needs researcher approval before use (see the SAP).
+        res.update({"t": np.nan, "df": n - 1, "p_raw": np.nan, "computable": False,
+                    "zero_variance_value": res["mean_diff"]})
     elif computable:
         t = (res["mean_diff"] - null_value) / res["se"]
         df = n - 1
@@ -187,6 +187,36 @@ def result_category(row: dict, phase: str) -> str:
     if direction == "greater" and mean < null or direction == "less" and mean > null:
         return "not supported; observed difference opposite to the hypothesised direction (negative finding)"
     return "not statistically supported"
+
+
+def structural_context(d: PhaseData, metric: str, densities=DENSITIES) -> str:
+    """Data-derived explanation of ceiling / budget-exhaustion effects for D15 and T comparisons."""
+    notes = []
+    if metric == "d15_percent":
+        means = [d.runs_for(d.e1_config(a, n))["d15_percent"].mean() for a in ("BSW", "MWS") for n in densities]
+        means = [m for m in means if m == m]
+        if means and min(means) >= 99.0:
+            notes.append(f"Ceiling effect: mean D15 of BSW and MWS is {min(means):.2f}-{max(means):.2f} % at every "
+                         "density, leaving almost no room for a difference.")
+    if metric == "transfers_per_message":
+        vals = []
+        for a in ("BSW", "MWS"):
+            for n in densities:
+                runs = d.runs_for(d.e1_config(a, n))
+                if not runs.empty and "intermediate_transfers_per_message" in runs:
+                    L = runs["copy_budget"].iloc[0]
+                    vals.append((runs["intermediate_transfers_per_message"].mean(), L))
+        if vals and all(abs(v - (L - 1)) < 0.05 for v, L in vals):
+            notes.append("Budget exhaustion: both bounded-copy algorithms create (almost) exactly L-1 relay "
+                         "copies per message, so total transfers are fixed by the shared copy budget.")
+    return " ".join(notes)
+
+
+def zero_variance_note(res: dict) -> str:
+    if not res.get("degenerate_zero_variance"):
+        return ""
+    return (f"All {res['n']} paired differences equal {res['mean_diff']:g}; the paired t statistic is undefined, "
+            "so no p-value is reported and the test is statistically inconclusive.")
 
 
 # --------------------------------------------------------------------------- #
@@ -288,7 +318,9 @@ def confirmatory_family(d: PhaseData) -> dict:
                     "kind": kind, "test": "one-sided paired t-test" if kind != "noninferiority"
                     else f"one-sided paired non-inferiority t-test (margin {delta:g} pp)",
                     "incomplete_blocks": int(len(wide) - len(complete)),
-                    "missing_pairs": {int(k): v for k, v in missing.items()}})
+                    "missing_pairs": {int(k): v for k, v in missing.items()},
+                    "zero_variance_note": zero_variance_note(res),
+                    "structural_note": structural_context(d, metric)})
         rows.append(res)
 
     block_row("H1", "Timely delivery: MWS improves D5 over BSW", "d5_percent", "greater", 0.0, "superiority",
@@ -325,7 +357,9 @@ def confirmatory_family(d: PhaseData) -> dict:
 
     p_adj, levels = holm([r.get("p_raw", np.nan) for r in rows], alpha)
     for r, p, lvl in zip(rows, p_adj, levels):
-        r["p_holm"] = float(p)
+        # A non-computable test keeps its place in the Holm family (m = 5, conservative for the others)
+        # but receives no adjusted p-value of its own.
+        r["p_holm"] = float(p) if r.get("computable", False) else float("nan")
         r["holm_level"] = float(lvl)
         r["decision"] = decide("noninferiority" if r["kind"] == "noninferiority" else "test", p,
                                r.get("computable", False), d.phase, alpha)
@@ -351,11 +385,13 @@ def secondary_family(d: PhaseData) -> pd.DataFrame:
             frame, missing = paired_frame(d, d.e1_config("MWS", n), d.e1_config("BSW", n), metric)
             res = one_sample_test(frame["diff"].to_numpy(), alt, null, alpha)
             res.update({"hypothesis": f"{hid}@N={n}", "node_count": n, "metric": metric, "kind": kind,
-                        "comparison": "MWS - BSW", "missing_pairs": missing})
+                        "comparison": "MWS - BSW", "missing_pairs": missing,
+                        "zero_variance_note": zero_variance_note(res),
+                        "structural_note": structural_context(d, metric, (n,))})
             rows.append(res)
     p_adj, levels = holm([r["p_raw"] for r in rows], alpha)
     for r, p, lvl in zip(rows, p_adj, levels):
-        r["p_holm_secondary"] = float(p)
+        r["p_holm_secondary"] = float(p) if r["computable"] else float("nan")
         r["decision"] = decide("noninferiority" if r["kind"] == "noninferiority" else "test", p,
                                r["computable"], d.phase, alpha)
         r["family"] = "secondary (density-specific follow-ups)"
@@ -377,7 +413,7 @@ def _explore(d: PhaseData, exp: str, comparison: str, cfg_a, cfg_b, metrics=EXPL
                      "mean_diff": res["mean_diff"], "median_diff": res["median_diff"], "sd": res["sd"],
                      "dz": res["dz"], "ci95_low": res["ci95_low"], "ci95_high": res["ci95_high"],
                      "p_two_sided_unadjusted": res["p_raw"], "wilcoxon_p": res["wilcoxon_p"],
-                     "missing_pairs": len(missing),
+                     "missing_pairs": len(missing), "zero_variance": res["degenerate_zero_variance"],
                      "status": "exploratory (not confirmatory; unadjusted)"})
     return rows
 

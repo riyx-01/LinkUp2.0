@@ -27,7 +27,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from .confidence_intervals import summarize  # noqa: E402
-from .data import DENSITIES, E1_ALGORITHMS, PhaseData  # noqa: E402
+from .data import DENSITIES, E1_ALGORITHMS, PhaseData, primary_validation  # noqa: E402
 from .descriptive import cumulative_delivery, e1_summary  # noqa: E402
 from .hypothesis_tests import density_differences, paired_frame  # noqa: E402
 
@@ -397,6 +397,35 @@ def workload_figure(fw: FigureWriter, d: PhaseData) -> None:
             f"E6 (primary-workload arms reused from E1). {CI_NOTE}", pd.DataFrame(rows))
 
 
+def sensitivity_figure(fw: FigureWriter, d: PhaseData) -> None:
+    from .diagnostics import sensitivity_table
+
+    tab = sensitivity_table(d)
+    if tab.empty:
+        return
+    titles = {"X1": "X1 communication radius", "X3": "X3 network-wide traffic",
+              "X3b": "X3b load scaled with nodes", "X4": "X4 separation / rejoin"}
+    exps = [e for e in ("X1", "X3", "X3b", "X4") if e in set(tab.experiment)]
+    fig, axes = plt.subplots(1, len(exps), figsize=(3.6 * len(exps), 3.9), squeeze=False)
+    for ax, exp in zip(axes[0], exps):
+        sub = tab[tab.experiment == exp].reset_index(drop=True)
+        x = np.arange(len(sub))
+        lo = (sub["dD5_mean_pp"] - sub["dD5_ci95_low"]).fillna(0)
+        hi = (sub["dD5_ci95_high"] - sub["dD5_mean_pp"]).fillna(0)
+        ax.errorbar(x, sub["dD5_mean_pp"], yerr=[lo, hi], color=COLORS["MWS"], marker="D", linestyle="none",
+                    capsize=3, markeredgecolor="white")
+        ax.axhline(0, color=TEXT2, lw=0.8)
+        ax.set_xticks(x)
+        ax.set_xticklabels([c.replace("mean interval (s)=", "interval ").replace(", after activity", "")
+                            .replace(" | ", "\n") for c in sub["condition"]], fontsize=7.5, rotation=0)
+        ax.set_title(titles[exp])
+        ax.set_ylabel("Paired ΔD5, MWS − BSW (pp)")
+    fig.suptitle("Exploratory sensitivity of the MWS − BSW difference", fontsize=10.5)
+    fw.save(fig, "fig16_sensitivity", "Sensitivity experiments X1-X4",
+            f"Exploratory, unadjusted. {CI_NOTE} Primary scenario: radius 10 m, interval 10 s, 300 s separation "
+            "with rejoin after the current activity.", tab)
+
+
 # --------------------------------------------------------------------------- mobility validation
 def mobility_validation_figure(df: pd.DataFrame, out_dir: Path, fw: FigureWriter | None = None) -> None:
     _style()
@@ -511,6 +540,7 @@ def make_all_figures(d: PhaseData, out_dir: Path) -> list[dict]:
                     "Routing runtime by nodes and algorithm", error="sd",
                     caption_extra="Excludes shared scenario generation; measured on the execution machine.")
     if not d.validation.empty:
-        mobility_validation_figure(d.validation, out_dir, fw)
+        mobility_validation_figure(primary_validation(d), out_dir, fw)
+    sensitivity_figure(fw, d)
     pd.DataFrame(fw.manifest).to_csv(Path(out_dir) / "figure_manifest.csv", index=False)
     return fw.manifest

@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from . import diagnostics as dg
 from . import hypothesis_tests as ht
 from .data import load_phase
 from .descriptive import KEY_METRICS, e1_summary, experiment_summary
@@ -46,7 +47,17 @@ def run_analysis(phase: str, root: Path | None = None) -> dict:
     res["secondary"] = ht.secondary_family(d)
     res["exploratory"] = ht.exploratory_comparisons(d)
     res["workload_interaction"] = ht.workload_interaction(d)
-    res["sample_size"] = ht.sample_size_assessment(d)
+    # Sample-size assessment is a planning tool: computed only for pilot/development data. On confirmatory data
+    # it would be post-hoc power, which must not be used to judge or extend the study.
+    res["sample_size"] = ht.sample_size_assessment(d) if d.phase != "confirmatory" else pd.DataFrame()
+    res["efficiency"] = dg.efficiency_table(d)
+    res["efficiency_compact"] = dg.per_density_efficiency(d)
+    res["rules"] = dg.rule_table(d)
+    res["workload_diag"] = dg.workload_table(d)
+    res["sensitivity"] = dg.sensitivity_table(d)
+    for key, name in (("efficiency", "efficiency_metrics"), ("rules", "rule_diagnostics"),
+                      ("workload_diag", "workload_diagnostics"), ("sensitivity", "sensitivity_X1_X4")):
+        res[key].to_csv(proc / f"{name}.csv", index=False)
 
     for e, s in res["summaries"].items():
         s.to_csv(proc / f"summary_{e}.csv", index=False)
@@ -78,8 +89,9 @@ def analyze_phase(phase: str, export: bool = False, root: Path | None = None) ->
     print(f"  {len(res['figures'])} figures -> {d.root / 'figures'}")
     fam = res["confirmatory"]["family"]
     for _, r in fam.iterrows():
+        flag = " [zero variance]" if r.get("degenerate_zero_variance") is True else ""
         print(f"  {r['hypothesis']}: mean diff {r.get('mean_diff', float('nan')):.3f}, p_raw {r['p_raw']:.4g}, "
-              f"p_holm {r['p_holm']:.4g} -> {r['decision']}")
+              f"p_holm {r['p_holm']:.4g} -> {r['decision']}{flag}")
     if export:
         from .export_excel import write_workbook
         from .research_summary import write_latex_tables, write_report

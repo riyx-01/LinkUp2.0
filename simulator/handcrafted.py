@@ -16,7 +16,7 @@ from .contacts import ContactTrace
 from .groups import GroupAssignment
 from .message import MessageTable
 from .mobility import MobilityTrace
-from .scenario import Scenario
+from .scenario import Scenario, attach_message_diagnostics
 
 
 def small_config(duration: int = 60, lifetime: int = 30, generation_end: int = 20,
@@ -71,4 +71,5 @@ def handcrafted_scenario(cfg: dict, node_count: int, contacts: dict[int, list[tu
     scen = Scenario(seed=seed, node_count=node_count, cfg={"handcrafted": True}, scenario_id="handcrafted",
                     mobility=mob, contacts=trace, messages=table, validation={}, scenario_hash="")
     scen.scenario_hash = scen.compute_hash()
+    attach_message_diagnostics(scen)
     return scen

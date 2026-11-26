@@ -82,5 +82,7 @@ algorithms (tested).
 
 ## Optional published baselines - not implemented
 Spray-and-Focus, Kawecki & Schoeneich mobility-based routing and Social Spray-and-Wait (Manole et al., 2021)
-were not implemented because the original publications were not inspected and reproduced in this work. No
-comparison with them is claimed. Any future approximation must use a distinct name and document differences.
+were not implemented. A faithful reproduction of Kawecki & Schoeneich (2016) was assessed in revision 2, but the
+original article could not be retrieved (publisher login gate), and an implementation from secondary
+descriptions would not be faithful. No comparison with them is claimed. If the article PDF is supplied, the
+assessment can be repeated. Any future approximation must use a distinct name and document differences.

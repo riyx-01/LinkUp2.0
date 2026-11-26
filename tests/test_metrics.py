@@ -6,7 +6,7 @@ import numpy as np
 
 from simulator.config import apply_overrides
 from simulator.metrics import delivery_counts, percent
-from tests.helpers import handcrafted_scenario, random_scenario, run, small_config
+from tests.helpers import handcrafted_scenario, random_scenario, run, same_metrics, small_config
 
 
 def test_known_timestamps_give_correct_d2_d5_d15():
@@ -63,8 +63,7 @@ def test_identical_config_and_seed_reproduce_identical_metrics():
         c = apply_overrides(cfg, {"routing.algorithm": alg})
         a = run(c, scen, event_log=False)
         b = run(c, scen2, event_log=False)
-        strip = lambda d: {k: v for k, v in d.items() if k != "routing_runtime_s"}  # noqa: E731
-        assert strip(a.metrics) == strip(b.metrics)
+        assert same_metrics(a.metrics, b.metrics)
         assert a.messages == b.messages
 
 
@@ -78,3 +77,47 @@ def test_t_counts_both_transfer_kinds_and_matches_message_rows():
     delivered = [r for r in out.messages if r["first_delivery_time_s"] is not None]
     assert sum(r["delivered_within_5min"] for r in out.messages) == m["delivered_5min"]
     assert len(delivered) == m["unique_delivered"]
+
+
+def test_spray_efficiency_metrics_on_handcrafted_chain():
+    """L = 4: relays at t=2 (4->2+2), t=4 and t=6 (2->1+1); delivery at t=10."""
+    cfg = small_config(**{"routing__algorithm": "BSW", "routing__copy_budget": 4})
+    contacts = {2: [(0, 1)], 4: [(0, 2)], 6: [(1, 4)], 10: [(4, 3)]}
+    out = run(cfg, handcrafted_scenario(cfg, 6, contacts, [(0, 3, 0)]))
+    m, row = out.metrics, out.messages[0]
+    assert row["first_relay_age_s"] == 2 and m["mean_time_to_first_relay_s"] == 2
+    assert row["half_copies_age_s"] == 2          # ceil(4/2) = 2 copies after the first relay
+    assert row["spray_complete_age_s"] == 6       # every remaining replica holds one token from t=6
+    assert m["pct_messages_spray_complete"] == 100.0 and m["copy_budget_utilization"] == 1.0
+    assert row["relays_before_first_delivery"] == 3 and row["relays_after_first_delivery"] == 0
+    assert m["timely_deliveries_per_100_transfers"] == 25.0   # 1 timely delivery / 4 completed transfers
+    assert m["intermediate_transfers_per_delivered_message"] == 3.0
+
+
+def test_relays_after_delivery_and_undefined_metrics():
+    cfg = small_config(**{"routing__algorithm": "Epidemic"})
+    contacts = {2: [(0, 3)], 4: [(0, 1)]}
+    out = run(cfg, handcrafted_scenario(cfg, 5, contacts, [(0, 3, 0), (2, 4, 0)]))
+    m = out.metrics
+    assert m["relays_after_first_delivery"] == 1          # copy to node 1 after the friend already had it
+    assert m["relays_on_undelivered_messages"] == 0
+    assert math.isnan(m["copy_budget_utilization"])        # not a token algorithm: undefined, never 0
+    assert math.isnan(m["mean_time_to_spray_complete_s"])
+    none = run(cfg, handcrafted_scenario(cfg, 3, {}, [(0, 2, 0)])).metrics
+    assert math.isnan(none["intermediate_transfers_per_delivered_message"])   # no delivered message
+    assert math.isnan(none["timely_deliveries_per_100_transfers"])            # no completed transfer
+
+
+def test_workload_diagnostics_are_evaluation_only():
+    from algorithms.base import AlgorithmContext
+    cfg = small_config(**{"routing__algorithm": "Epidemic"})
+    contacts = {0: [(0, 3)], 3: [(1, 2)], 6: [(2, 4)]}
+    scen = handcrafted_scenario(cfg, 5, contacts, [(0, 3, 0), (1, 4, 0)])
+    assert scen.messages.in_range_at_creation.tolist() == [True, False]
+    assert scen.messages.first_direct_contact.tolist() == [0, -1]
+    out = run(cfg, scen)
+    r0, r1 = out.messages
+    assert r0["dest_in_range_at_creation"] and not r0["delivered_via_relay"]
+    assert not r1["dest_in_range_at_creation"] and r1["delivered_via_relay"] and r1["delivered_before_first_direct_contact"]
+    assert out.metrics["d5_percent_dest_in_range"] == 100.0 and out.metrics["pct_delivered_via_relay"] == 50.0
+    assert set(AlgorithmContext.__dataclass_fields__) == {"friend_group", "created", "motion"}  # no future info

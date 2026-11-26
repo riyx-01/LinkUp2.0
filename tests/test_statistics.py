@@ -99,12 +99,19 @@ def test_decision_wording_is_restricted():
     assert ht.decide("test", 0.001, True, "pilot", 0.05) == ht.PILOT_DECISION
 
 
-def test_zero_variance_rule():
-    zeros = np.zeros(10)
-    assert ht.one_sample_test(zeros, "less")["p_raw"] == 1.0           # H3-style: no reduction
-    assert ht.one_sample_test(zeros, "greater", -5.0)["p_raw"] == 0.0  # H2-style: inside margin
-    r = ht.one_sample_test(zeros, "greater")
-    assert r["p_raw"] == 1.0 and r["degenerate_zero_variance"]
+def test_zero_variance_is_inconclusive_not_decided():
+    """Identical paired differences: t is undefined, so no p-value is assigned and nothing is decided."""
+    for values, alt, null in ((np.zeros(10), "less", 0.0), (np.zeros(10), "greater", -5.0),
+                              (np.full(10, 2.0), "greater", 0.0), (np.full(10, -1.0), "two-sided", 0.0)):
+        r = ht.one_sample_test(values, alt, null)
+        assert r["degenerate_zero_variance"] and not r["computable"]
+        assert np.isnan(r["p_raw"]) and np.isnan(r["t"])
+        assert r["n"] == 10 and r["mean_diff"] == values[0]          # observed difference still reported
+        assert "undefined" in ht.zero_variance_note(r)
+        dec = ht.decide("noninferiority" if null < 0 else "test", np.nan, r["computable"], "confirmatory", 0.05)
+        assert dec == ht.INCONCLUSIVE
+    # H2 is never declared non-inferior merely because all differences are zero.
+    assert ht.decide("noninferiority", np.nan, False, "confirmatory", 0.05) != ht.NI_ESTABLISHED
 
 
 def test_confirmatory_family_on_constructed_data():
@@ -129,12 +136,17 @@ def test_confirmatory_family_on_constructed_data():
     fam = ht.confirmatory_family(d)["family"].set_index("hypothesis")
     assert fam.loc["H1", "mean_diff"] == pytest.approx(4.0, abs=0.5)
     assert fam.loc["H1", "decision"] == ht.REJECT
-    assert fam.loc["H2", "decision"] == ht.NI_ESTABLISHED        # identical D15 -> inside the margin
-    assert fam.loc["H3", "decision"] == ht.FAIL_TO_REJECT        # identical T -> no reduction
+    # Identical D15 and T in every pair -> zero variance -> inconclusive (never decided by a rule).
+    assert fam.loc["H2", "decision"] == ht.INCONCLUSIVE and fam.loc["H2", "degenerate_zero_variance"]
+    assert fam.loc["H3", "decision"] == ht.INCONCLUSIVE and np.isnan(fam.loc["H3", "p_holm"])
     assert fam.loc["H4", "decision"] == ht.REJECT                # densities differ by construction
     assert fam.loc["H5", "decision"] == ht.REJECT
     assert set(fam["decision"]) <= set(ht.ALLOWED_DECISIONS)
-    assert (fam["p_holm"] >= fam["p_raw"] - 1e-12).all()
+    ok = fam["p_holm"].notna()
+    assert (fam.loc[ok, "p_holm"] >= fam.loc[ok, "p_raw"] - 1e-12).all()
+    # Holm decisions are consistent with the adjusted p-values.
+    for h in ("H1", "H4", "H5"):
+        assert (fam.loc[h, "decision"] == ht.REJECT) == (fam.loc[h, "p_holm"] < 0.05)
 
 
 def test_h4_detects_no_density_difference_when_absent():
@@ -163,3 +175,17 @@ def test_confidence_intervals():
     b = bootstrap_ci(np.column_stack([x, x + 1, x + 2]), resamples=2000, seed=1)
     assert b[0] < 4 < b[1]
     assert bootstrap_ci(x, resamples=500, seed=5) == bootstrap_ci(x, resamples=500, seed=5)
+
+
+def test_noninferiority_established_with_variable_differences():
+    rng = np.random.default_rng(5)
+    x = rng.normal(-0.5, 1.0, 30)   # small losses, far inside a 5 pp margin
+    r = ht.one_sample_test(x, "greater", null_value=-5.0)
+    assert r["computable"] and r["p_raw"] < 1e-6 and r["one_sided_bound"] > -5
+    assert ht.decide("noninferiority", r["p_raw"], True, "confirmatory", 0.05) == ht.NI_ESTABLISHED
+
+
+def test_sample_size_not_computed_on_confirmatory_data():
+    import inspect
+    from analysis import pipeline
+    assert 'd.phase != "confirmatory"' in inspect.getsource(pipeline.run_analysis)

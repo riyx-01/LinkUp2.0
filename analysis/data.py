@@ -128,6 +128,22 @@ def data_quality_checks(d: PhaseData) -> list[dict]:
     return checks
 
 
+def primary_validation(d: PhaseData) -> pd.DataFrame:
+    """Validation rows of the primary scenario only (exploratory X3/X4 scenarios excluded)."""
+    v = d.validation
+    if v.empty:
+        return v
+    cfg = d.cfg
+    keep = pd.Series(True, index=v.index)
+    for col, val in (("workload_type", "separated_friends"), ("communication_radius_m", cfg["communication"]["radius_m"]),
+                     ("mean_interarrival_s", cfg["traffic"]["mean_interarrival_s"]),
+                     ("min_separation_s", cfg["mobility"]["min_separation_s"]),
+                     ("rejoin_policy", cfg["mobility"]["rejoin_policy"])):
+        if col in v:
+            keep &= v[col] == val
+    return v[keep]
+
+
 def failed_runs_table(d: PhaseData) -> pd.DataFrame:
     cols = ["run_id", "configuration_id", "algorithm", "variant", "seed", "node_count", "error_message"]
     failed = d.runs[d.runs["run_status"] != "ok"]

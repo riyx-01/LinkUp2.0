@@ -100,6 +100,9 @@ class Matrix:
                 "communication_radius_m": cfg["communication"]["radius_m"],
                 "motion_error_rate": cfg["motion_classification"]["error_rate"],
                 "workload_type": cfg["traffic"]["workload_type"],
+                "mean_interarrival_s": cfg["traffic"]["mean_interarrival_s"],
+                "min_separation_s": cfg["mobility"]["min_separation_s"],
+                "rejoin_policy": cfg["mobility"]["rejoin_policy"],
                 "reused_from": first[arm.configuration_id] if reused else "",
             })
         return rows

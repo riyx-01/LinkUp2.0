@@ -23,7 +23,7 @@ import pandas as pd
 
 from experiments.provenance import provenance_record
 
-from .data import DENSITIES, E1_ALGORITHMS, failed_runs_table, missing_runs_table
+from .data import DENSITIES, E1_ALGORITHMS, failed_runs_table, missing_runs_table, primary_validation
 from .descriptive import compact_table
 from .hypothesis_tests import PILOT_DECISION
 from .tables import latex_table, md_table
@@ -45,6 +45,33 @@ LIMITATIONS = [
     "With an equal copy budget, BSW and MWS normally distribute all tokens within the lifetime, so transfer "
     "counts (T) can be structurally identical; a lower T would not prove lower energy use.",
     "Exploratory results (E2, E3, E5, E6 and optional extensions) are not confirmatory evidence.",
+    "When every paired difference is identical the paired t-test is undefined; such tests are reported as "
+    "statistically inconclusive, never as decided by assigning p = 0 or p = 1.",
+    "Most separated pairs meet directly again before the message expires (the sender or friend walks back), "
+    "which limits how much relaying can add, especially for D15.",
+    "No published mobility-aware routing algorithm was reproduced (the Kawecki & Schoeneich article could not be "
+    "inspected); comparisons are limited to Direct Delivery, Epidemic and BSW.",
+]
+
+PLAIN_GUIDE = [
+    ("D5", "the share of all written messages that reached the friend within 5 minutes. Higher is better. "
+           "Messages that never arrived still count in the denominator."),
+    ("D15", "the same within 15 minutes (the message lifetime)."),
+    ("Completed transfers (T)", "how many times a copy actually moved from one phone to another, per message. "
+                                "Lower means less phone activity; it is not a battery measurement."),
+    ("Latency", "how long delivered messages took. It ignores undelivered messages, so always read it together "
+                "with D5/D15 and the cumulative-delivery chart."),
+    ("pp (percentage points)", "the difference between two percentages: 75 % vs 73 % is +2 pp."),
+    ("95% confidence interval", "the range of plausible values for the true average difference. If the whole "
+                                "range is above 0 the data favour MWS; if it crosses 0 the data cannot tell."),
+    ("p-value / Holm p", "how surprising the observed difference would be if there were really no difference. "
+                         "Holm p is corrected because five hypotheses are tested together; below 0.05 counts."),
+    ("Reject the null hypothesis", "the data support the hypothesis at the 5 % level after correction."),
+    ("Fail to reject the null hypothesis", "not enough evidence. This does NOT prove the methods are equal."),
+    ("Non-inferiority established", "MWS is shown not to be worse by more than the agreed margin (5 pp)."),
+    ("Evidence is statistically inconclusive", "the test could not be computed, e.g. every paired difference was "
+                                               "identical so the t-test is undefined."),
+    ("Exploratory", "an extra comparison without multiple-testing correction: a hint, not proof."),
 ]
 
 OBJECTIVE_MAP = [
@@ -91,7 +118,10 @@ def key_findings(res: dict) -> pd.DataFrame:
         est = (f"mean difference {_f(r.get('mean_diff'))} (95% CI {_f(r.get('ci95_low'))} to {_f(r.get('ci95_high'))}), "
                if r["hypothesis"] != "H4" else
                f"density means of dD5: {res['confirmatory']['h4']['density_means']}, ")
-        flag = " All paired differences identical (zero variance)." if r.get("degenerate_zero_variance") is True else ""
+        flag = (" All paired differences identical (zero variance): t undefined, statistically inconclusive."
+                if r.get("degenerate_zero_variance") is True else "")
+        if isinstance(r.get("structural_note"), str) and r["structural_note"]:
+            flag += " " + r["structural_note"]
         rows.append({"category": cat, "source": r["hypothesis"],
                      "finding": f"{r['title']}: {est}raw p {_p(r['p_raw'])}, Holm p {_p(r['p_holm'])}, n = "
                                 f"{int(r['n']) if r['n'] == r['n'] else 'n/a'}. Decision: {r['decision']}.{flag}"})
@@ -186,7 +216,8 @@ def _hyp_table(res: dict) -> pd.DataFrame:
                     "mean diff": _f(r.get("mean_diff")), "SD": _f(r.get("sd")), "dz": _f(r.get("dz")),
                     "95% CI": f"{_f(r.get('ci95_low'))} to {_f(r.get('ci95_high'))}",
                     "bootstrap 95% CI": f"{_f(r.get('boot_ci_low'))} to {_f(r.get('boot_ci_high'))}",
-                    "p raw": _p(r["p_raw"]), "p Holm": _p(r["p_holm"]), "decision": r["decision"]})
+                    "p raw": _p(r["p_raw"]), "p Holm": _p(r["p_holm"]), "decision": r["decision"],
+                    "note": "zero variance - t undefined" if r.get("degenerate_zero_variance") is True else ""})
     return pd.DataFrame(out)
 
 
@@ -234,7 +265,7 @@ def write_report(res: dict, path: Path) -> Path:
     add(md_table(pd.DataFrame(d.quality)))
     add("\n## 4. Mobility validation (algorithm independent)\n")
     if not d.validation.empty:
-        v = d.validation[(d.validation.workload_type == "separated_friends") & (d.validation.communication_radius_m == 10)]
+        v = primary_validation(d)
         cols = ["pct_time_walking", "walking_speed_realised_mean_mps", "avg_neighbours_per_node",
                 "contact_events_per_node_per_hour", "contact_duration_median_s", "encounter_start_involving_walker_share",
                 "separation_events_total", "separation_duration_mean_s", "mean_separated_members",
@@ -251,8 +282,11 @@ def write_report(res: dict, path: Path) -> Path:
     add("\n## 6. D5, D15 and transfer-efficiency findings (H1-H3)\n")
     for hid in ("H1", "H2", "H3"):
         r = fam[fam.hypothesis == hid].iloc[0]
-        flag = " **All paired differences were identical (zero variance); the pre-specified degenerate-case rule " \
-               "was applied.**" if r.get("degenerate_zero_variance") is True else ""
+        flag = ""
+        if r.get("degenerate_zero_variance") is True:
+            flag += f" **{r['zero_variance_note']}**"
+        if isinstance(r.get("structural_note"), str) and r["structural_note"]:
+            flag += f" Structural context: {r['structural_note']}"
         add(f"- **{hid}** ({r['title']}): mean of density-averaged paired differences {_f(r['mean_diff'], 3)} "
             f"(SD {_f(r['sd'], 3)}, n = {int(r['n'])}), 95% CI {_f(r['ci95_low'], 3)} to {_f(r['ci95_high'], 3)}, "
             f"{r['bound_type']} bound {_f(r['one_sided_bound'], 3)}; raw p {_p(r['p_raw'])}, Holm p "
@@ -328,6 +362,57 @@ def write_report(res: dict, path: Path) -> Path:
             "are researcher choices, not calibrated values; the 5-seed SD is imprecise, so an 80% upper confidence "
             "limit of the SD is also shown. 'mde_pp_at_n30' is the minimal detectable effect with 30 seeds.\n")
         add(md_table(res["sample_size"], 2))
+    add("\n## 15a. Supporting efficiency metrics (exploratory; E1)\n")
+    add("Computed from actual transfer events. They describe *how* copies are spent; they are not battery "
+        "measurements. Undefined values (e.g. spray metrics for algorithms without a copy budget, or times for "
+        "messages that never reached the event) are shown as '-' and are never treated as zero.\n")
+    add(md_table(res["efficiency_compact"], 2))
+    add("\nDefinitions: *D5 deliveries /100 transfers* = messages delivered within 5 min per 100 completed "
+        "transfers; *first relay* = seconds from creation to the first relay copy; *half copies* = until ceil(L/2) "
+        "copies exist; *spray complete* = until every remaining copy holds one token; *budget used* = relays / "
+        "(L - 1); *relays per delivered msg* = all relays / delivered messages (relays on undelivered messages "
+        "are in the numerator). Full table: `processed/efficiency_metrics.csv`.")
+    add("\n## 15b. MWS rule diagnostics (exploratory)\n")
+    rules = res["rules"]
+    if not rules.empty:
+        cols = ["arm", "walking_relay_share_of_relays_mean", "fallback_relay_share_of_relays_mean",
+                "friend_exclusions_per_message_mean", "stationary_exclusions_per_message_mean",
+                "one_token_waits_per_message_mean", "duplicates_prevented_per_message_mean",
+                "capacity_blocked_per_message_mean"]
+        t = rules[(rules.experiment.isin(["E1", "E3"])) & (rules.node_count == 100)][[c for c in cols if c in rules]]
+        add(md_table(t.drop_duplicates("arm"), 2))
+        add("\nShares use all relays of the run as denominator. 'Per message' counts are opportunity-seconds "
+            "(one per second of contact per message) divided by generated messages; they show how often a rule "
+            "acted, not distinct events. Full table with SDs and all densities: `processed/rule_diagnostics.csv`.")
+    add("\n## 15c. Workload diagnostics (exploratory, evaluation only)\n")
+    add("These classifications use the full contact trace (including the future) and are computed only for "
+        "evaluation; routing algorithms never see them. No message is excluded from the primary analysis.\n")
+    wd = res["workload_diag"]
+    if not wd.empty:
+        cols = ["experiment", "arm", "messages_dest_in_range_at_creation_mean", "d5_percent_dest_in_range_mean",
+                "d5_percent_dest_out_of_range_mean", "pct_messages_with_direct_contact_mean",
+                "pct_delivered_before_direct_contact_mean", "pct_delivered_via_relay_mean"]
+        add(md_table(wd[[c for c in cols if c in wd]], 2))
+    add("\n## 15d. Sensitivity experiments X1-X4 (exploratory)\n")
+    sens = res["sensitivity"]
+    if sens.empty:
+        add("_Not executed in this batch (optional experiments; run with --include-optional)._")
+    else:
+        cols = ["experiment", "condition", "pairs", "d5_percent_BSW", "d5_percent_MWS", "dD5_mean_pp", "dD5_ci95_low",
+                "dD5_ci95_high", "d15_percent_BSW", "d15_percent_MWS", "transfers_per_message_MWS",
+                "capacity_blocked_per_message_MWS", "buffer_drops_BSW", "buffer_drops_MWS", "generated_messages_MWS"]
+        add(md_table(sens[[c for c in cols if c in sens]], 2))
+        add("\nX1 communication radius; X3 network-wide message interval; X3b offered load proportional to node "
+            "count; X4 separation duration / rejoin rule. The primary 10 m, 10 s, after-activity scenario is "
+            "unchanged and is not replaced by any of these conditions.")
+    add("\n## 15e. Published mobility-aware baseline\n")
+    add("A faithful reproduction of Kawecki & Schoeneich (2016) was assessed but not attempted: the original "
+        "article could not be retrieved for inspection in this work (publisher access gate), and the algorithm "
+        "cannot be reproduced faithfully from secondary descriptions. No comparison with it is claimed. The "
+        "historical-motion MWS variant is an internal ablation, not a reproduction of that algorithm.")
+    add("\n## Plain-language guide to the numbers\n")
+    for term, text in PLAIN_GUIDE:
+        add(f"- **{term}**: {text}")
     add("\n## 16. Limitations\n")
     for item in LIMITATIONS:
         add(f"- {item}")

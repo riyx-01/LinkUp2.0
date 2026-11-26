@@ -43,6 +43,8 @@ def current_fingerprint() -> dict:
         "h2_noninferiority_margin_pp": cfg["statistics"]["h2_noninferiority_margin_pp"],
         "planned_repetitions": cfg["statistics"]["planned_repetitions"],
         "h4_model": cfg["statistics"]["h4_model"],
+        "zero_variance_rule": cfg["statistics"].get("zero_variance_rule"),
+        "meaningful_target_effects_pp": cfg["statistics"].get("meaningful_target_effects_pp"),
     }
 
 
@@ -54,6 +56,16 @@ def freeze(approver: str, note: str = "", force: bool = False) -> dict:
     fp = current_fingerprint()
     if len(fp["seeds"]) != fp["planned_repetitions"]:
         raise ApprovalError("Number of confirmatory seeds differs from planned_repetitions.")
+    targets = fp.get("meaningful_target_effects_pp") or {}
+    missing = [k for k in ("H1", "H5") if targets.get(k) is None]
+    if missing:
+        raise ApprovalError(f"Meaningful target effects for {missing} are not set. Agree them with the mentor, "
+                            "write them in configs/confirmatory.json -> statistics.meaningful_target_effects_pp, "
+                            "then freeze again.")
+    if APPROVAL_PATH.exists():  # keep every previous approval for the audit trail
+        history = APPROVAL_PATH.with_name("confirmatory.approval_history.jsonl")
+        with open(history, "a", encoding="utf-8") as fh:
+            fh.write(APPROVAL_PATH.read_text(encoding="utf-8").replace("\n", " ") + "\n")
     record = {"approved_by": approver.strip(), "approved_at_utc":
               _dt.datetime.now(_dt.timezone.utc).isoformat(timespec="seconds"), "note": note, **fp}
     APPROVAL_PATH.write_text(json.dumps(record, indent=2), encoding="utf-8")

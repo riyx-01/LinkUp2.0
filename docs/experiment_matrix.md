@@ -16,8 +16,17 @@ detected by the effective-configuration hash and run once.
 At 30 confirmatory seeds: 750 runs. Priority if resources were limited: E1, E4, then E2, E3, E5, E6.
 Measured runtime makes the full matrix feasible (see `results/benchmark/benchmark.md`).
 
-Optional, exploratory extensions (excluded unless `--include-optional`): X1 radius 5/10/15 m (BSW, MWS),
-X2 temporally correlated classification errors (10 %, 20 %, mean burst 5 s).
+Optional, exploratory extensions (excluded unless `--include-optional`; the primary scenario is never replaced):
+
+| ID | Purpose | Arms (100 nodes, L = 8, BSW and MWS unless stated) | New configs |
+|---|---|---|---|
+| X1 | communication radius | 5, 10 (reused), 15 m | 4 |
+| X2 | temporally correlated classification errors | MWS only, 10 %, 20 %, mean burst 5 s | 2 |
+| X3 | network-wide traffic load | mean interval 10 (reused), 5, 2 s | 4 |
+| X3b | load proportional to node count (0.001 msg/node/s) | N = 50 @ 20 s, N = 100 @ 10 s (reused), N = 200 @ 5 s | 4 |
+| X4 | separation duration / rejoin rule | primary (reused); immediate rejoin after 300 s; minimum 600 s; minimum 900 s | 6 |
+
+With all optional experiments: 45 unique configurations (225 runs on 5 pilot seeds).
 
 Full MWS at 100 nodes (immediate, 0 % error, L = 8, primary workload) is a single configuration shared by
 E1, E2, E3, E4, E5 and E6; BSW at 100 nodes is shared by E1, E2, E3, E5 and E6.

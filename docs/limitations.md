@@ -19,6 +19,18 @@
 * **Structural features of the scenario (from the pilot).** Separated friends rejoin physically within the
   model, so D15 is near ceiling for spray-based algorithms; with equal copy budgets, BSW and MWS normally spend
   all tokens within the lifetime, so T is (near-)identical by construction. These limit what H2 and H3 can show.
+* **Zero-variance comparisons.** When every paired difference is identical (e.g. D15 at ceiling, T fixed by the
+  shared budget) the paired t-test is undefined; such tests are reported as statistically inconclusive, with the
+  observed difference and a structural explanation, never decided by assigning p = 0 or 1.
+* **Reunion of separated friends.** In the pilot 95-97 % of separated pairs met directly again before expiry, and
+  the rejoin rule strongly affects D5 (X4); the primary rule is a modelling assumption, not a measurement.
+* **Spreading speed.** MWS restricts early relays to walkers, so it spreads copies more slowly than BSW (spray
+  completion about 82 s vs 33 s at 100 nodes, pilot); this is reported, not tuned.
+* **Supporting efficiency metrics** describe how copies are spent; they are activity indicators, not energy.
+* **Published mobility-aware baseline not reproduced.** The Kawecki & Schoeneich (2016) article could not be
+  inspected (publisher access gate), so no faithful implementation was attempted and no comparison is claimed.
+* **Timing of revisions.** The revised zero-variance rule, supporting metrics and X1-X4 were defined after the
+  first confirmatory batch had been inspected; if that batch is kept, these additions are exploratory.
 * **Exploratory results** (E2, E3, E5, E6, optional extensions) are not confirmatory evidence.
 * **The contribution** is the controlled evaluation of immediate walking-state relay selection in bounded-copy
   opportunistic forwarding under these assumptions.

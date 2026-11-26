@@ -7,7 +7,8 @@ from algorithms.base import AlgorithmContext
 from algorithms.variants import build_algorithm
 from simulator.config import apply_overrides, configuration_id
 from simulator.motion import historical_walking, observed_walking
-from tests.helpers import handcrafted_scenario, random_scenario, run, small_config, transfers, walking_matrix
+from tests.helpers import (handcrafted_scenario, random_scenario, run, same_metrics, small_config, transfers,
+                           walking_matrix)
 
 T = 200
 

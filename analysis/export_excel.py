@@ -18,14 +18,15 @@ from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
-from .research_summary import LIMITATIONS, key_findings
+from .research_summary import LIMITATIONS, PLAIN_GUIDE, key_findings
 
 HEADER_FILL = PatternFill("solid", fgColor="1F4E78")
 TITLE_FONT = Font(bold=True, size=12, color="1F4E78")
 SHEETS = ["01_Read_Me", "02_Configurations", "03_Run_Results", "04_Data_Quality", "05_Mobility_Validation",
           "06_Main_Comparison", "07_Density_Analysis", "08_Copy_Budget", "09_Ablation", "10_Motion_Comparison",
           "11_Robustness", "12_Generalization", "13_Statistical_Tests", "14_Confidence_Intervals", "15_Charts",
-          "16_Key_Findings", "17_Limitations", "18_Provenance"]
+          "16_Key_Findings", "17_Limitations", "18_Provenance", "19_Efficiency_Metrics", "20_Rule_Diagnostics",
+          "21_Workload_Diagnostics", "22_Sensitivity_X1_X4"]
 
 
 def _clean(df: pd.DataFrame) -> pd.DataFrame:
@@ -122,6 +123,8 @@ def write_workbook(res: dict, path: Path) -> Path:
         ], columns=["item", "description"])
         b.table("01_Read_Me", readme, "Read me")
         b.table("01_Read_Me", pd.DataFrame({"sheet": SHEETS}), "Sheets")
+        b.table("01_Read_Me", pd.DataFrame(PLAIN_GUIDE, columns=["term", "plain-language meaning"]),
+                "How to read the numbers (plain language)")
         b.table("02_Configurations", d.matrix, "Experiment arms -> configuration ids (reuse shown in 'reused_from')")
         cfg_cols = ["configuration_id", "algorithm", "variant", "node_count", "copy_budget", "communication_radius_m",
                     "fallback_s", "motion_error_rate", "motion_signal", "workload_type", "experiment_id"]
@@ -196,6 +199,23 @@ def write_workbook(res: dict, path: Path) -> Path:
         b.table("18_Provenance", flat, f"Phase configuration ({d.phase})")
         versions = d.runs["code_version"].value_counts().reset_index()
         b.table("18_Provenance", versions, "Code versions present in the run table")
+        from .diagnostics import EFFICIENCY_METRICS, WORKLOAD_METRICS
+        from experiments.aggregate import RULE_RATES
+        b.table("19_Efficiency_Metrics", res["efficiency"], "Supporting efficiency metrics, E1 (mean, SD, number of "
+                "runs where defined). Activity indicators, not energy.")
+        b.table("19_Efficiency_Metrics", pd.DataFrame(EFFICIENCY_METRICS, columns=["column", "definition"]),
+                "Definitions and denominators")
+        b.table("20_Rule_Diagnostics", res["rules"], "MWS/BSW rule counters and normalised rates (E1, E3, E5)")
+        b.table("20_Rule_Diagnostics", pd.DataFrame([(c, n, dd or "(count)", desc) for c, n, dd, desc in RULE_RATES],
+                                                    columns=["column", "numerator", "denominator", "meaning"]),
+                "Definitions: numerators and explicit denominators")
+        b.table("21_Workload_Diagnostics", res["workload_diag"], "Workload subgroups (evaluation only; no message "
+                "excluded from the primary analysis)")
+        b.table("21_Workload_Diagnostics", pd.DataFrame(WORKLOAD_METRICS, columns=["column", "definition"]),
+                "Definitions")
+        b.table("22_Sensitivity_X1_X4", res["sensitivity"] if not res["sensitivity"].empty
+                else pd.DataFrame({"note": ["Optional experiments not executed in this batch"]}),
+                "Exploratory sensitivity: radius (X1), traffic load (X3, X3b), separation duration (X4)")
     figures_dir = d.root / "figures"
     _format(path, b, figures_dir, res.get("figures", []))
     return path

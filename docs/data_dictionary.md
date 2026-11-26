@@ -48,6 +48,25 @@
 | decisions_<RULE> | opportunity-seconds per decision label (e.g. decisions_MWS_WALKER, decisions_BLOCK_FRIEND) |
 | transfers_<RULE> | completed transfers by permitting rule (e.g. transfers_MWS_FALLBACK) |
 
+| timely_deliveries_per_100_transfers | delivered_5min / completed_transfers x 100 (NaN if no transfer) |
+| pct_messages_with_relay, mean_time_to_first_relay_s | share of messages with >= 1 relay; mean age at first relay (messages with a relay) |
+| pct_messages_half_copies, mean_time_to_half_copies_s | ceil(L/2) copies exist (source + relays); token algorithms only |
+| pct_messages_spray_complete, mean_time_to_spray_complete_s | every remaining replica holds one token; never reached if all replicas were dropped |
+| copy_budget_utilization | mean over messages of relays / (L - 1) (NaN if not token-based or L = 1) |
+| relays_before_first_delivery, relays_after_first_delivery | relays of delivered messages before / after their first delivery (run totals) |
+| relays_on_undelivered_messages | relays of messages never delivered |
+| intermediate_transfers_per_delivered_message | all relays / unique delivered messages (NaN if none delivered) |
+| messages_dest_in_range_at_creation | messages whose destination was in contact with the source at creation (evaluation only) |
+| d5_percent_dest_in_range, d5_percent_dest_out_of_range | D5 within these two subgroups (NaN if a subgroup is empty) |
+| pct_messages_with_direct_contact | messages whose source and destination meet directly before expiry |
+| pct_delivered_before_direct_contact, pct_delivered_via_relay | among delivered messages: delivered before any direct contact; first delivery hops > 1 |
+| mean_interarrival_s, min_separation_s, rejoin_policy | traffic / mobility parameters varied by X3, X3b and X4 |
+| walking_relay_transfers, fallback_relay_transfers | completed relays permitted by MWS R2 / R3 |
+| walking_relay_share_of_relays, fallback_relay_share_of_relays | the above / intermediate_transfers |
+| friend_exclusions_per_message, stationary_exclusions_per_message | R1 / R2 blocking decisions (opportunity-seconds) / generated messages |
+| one_token_waits_per_message | opportunities skipped because the carrier held one token / generated messages |
+| duplicates_prevented_per_message, capacity_blocked_per_message | opportunity-seconds / generated messages |
+
 Full config, effective config and provenance (Python and dependency versions, git commit, timestamp) are in
 `raw/runs/<run_id>.json`.
 
@@ -55,7 +74,10 @@ Full config, effective config and provenance (Python and dependency versions, gi
 run_id, message_id, source_id, destination_id, source_destination_relationship (`separated_friends`,
 `same_group_fallback`, `random_fallback`, `random_same_group`, `random_different_group`), creation_time_s,
 expiry_time_s, first_delivery_time_s (blank if undelivered), delivery_latency_s, delivered_within_2min/5min/15min,
-first_delivery_hops, completed_transfers_for_message, final_status (`delivered` / `undelivered_expired`).
+first_delivery_hops, completed_transfers_for_message, final_status (`delivered` / `undelivered_expired`),
+relays_for_message, first_relay_age_s, half_copies_age_s, spray_complete_age_s, relays_before_first_delivery,
+relays_after_first_delivery, dest_in_range_at_creation, first_direct_contact_age_s,
+delivered_before_first_direct_contact, delivered_via_relay (the last four are evaluation-only diagnostics).
 
 ## raw/events/<run_id>.csv (optional, representative)
 timestamp_s, event (`transfer`/`drop`/`expire`), sender, receiver, message_id, transfer_type
@@ -76,4 +98,5 @@ pairs_in_range_at_creation_share, initial_distance_median_m, integrity_* (must b
 ## Analysis outputs
 `summary_E*.csv` (mean/SD/CI/median per arm), `hypothesis_tests.csv`, `secondary_tests.csv`,
 `exploratory_tests.csv`, `paired_differences_H*.csv`, `h4_details.json`, `sample_size_assessment.csv`,
-`data_quality.csv`, `figures/data/*.csv` (exact plotted values).
+`data_quality.csv`, `efficiency_metrics.csv`, `rule_diagnostics.csv`, `workload_diagnostics.csv`,
+`sensitivity_X1_X4.csv`, `figures/data/*.csv` (exact plotted values).

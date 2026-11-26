@@ -263,7 +263,12 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
           <dt>Copy / carrier</dt><dd>A phone holding a copy of a message "carries" it while its owner walks around, until it meets someone to pass it to.</dd>
           <dt>Copy allowance</dt><dd>In the limited-copy methods the sender may create only a fixed number of copies. A carrier's number shows how many of those copies it controls; with 1 left it only gives the message to the friend.</dd>
           <dt>Delivered</dt><dd>The message reached the friend's phone. The target is within 5 minutes; messages are deleted after 15 minutes.</dd>
-          <dt>Hand-over</dt><dd>One copy moving from one phone to another. Fewer hand-overs means less phone activity (this is not a battery measurement).</dd>
+          <dt>Hand-over (completed transfer)</dt><dd>One copy moving from one phone to another. Fewer hand-overs means less phone activity (this is not a battery measurement).</dd>
+          <dt>Within 5 min (D5)</dt><dd>Share of all written messages that reached the friend within 5 minutes. Messages that never arrived still count, so they pull the share down.</dd>
+          <dt>Within 15 min (D15)</dt><dd>The same within 15 minutes, the message's whole lifetime.</dd>
+          <dt>Delivery time (latency)</dt><dd>How long a delivered message took. It ignores messages that never arrived, so read it together with D5 and D15.</dd>
+          <dt>Spray phase</dt><dd>In the limited-copy methods, the time while copies are still being handed out. It ends when every carrier holds its last copy and just waits to meet the friend.</dd>
+          <dt>One run vs many runs</dt><dd>This page replays one simulated festival. Research conclusions use averages over 30 festivals, with confidence ranges and formal tests.</dd>
         </dl>
       </details>
       <div class="card note" id="aboutCard"></div>

@@ -11,7 +11,8 @@ from simulator.engine import RoutingEngine
 from simulator.handcrafted import handcrafted_scenario, small_config
 from simulator.scenario import build_scenario
 
-__all__ = ["handcrafted_scenario", "small_config", "run", "walking_matrix", "transfers", "random_scenario"]
+__all__ = ["handcrafted_scenario", "small_config", "run", "walking_matrix", "transfers", "random_scenario",
+           "same_metrics"]
 
 
 @lru_cache(maxsize=None)
@@ -39,3 +40,18 @@ def transfers(out, kind=None):
     if kind:
         rows = [e for e in rows if e[5] == kind]
     return rows
+
+
+def same_metrics(a: dict, b: dict, ignore=("routing_runtime_s",)) -> bool:
+    """Metric dicts equal, treating NaN == NaN (undefined metrics) and ignoring wall-clock fields."""
+    if set(a) != set(b):
+        return False
+    for k in a:
+        if k in ignore:
+            continue
+        x, y = a[k], b[k]
+        if isinstance(x, float) and isinstance(y, float) and x != x and y != y:
+            continue
+        if x != y:
+            return False
+    return True

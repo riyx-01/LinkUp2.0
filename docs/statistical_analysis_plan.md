@@ -28,13 +28,48 @@ excluded from the affected test and reported (never imputed).
 * H3: a lower T would not show lower energy use.
 * H4: density differences are tested directly; an interaction is never inferred from one density being
   significant and another not. Pairwise density contrasts (Welch t, Holm within the set) are descriptive.
-* "Evidence is statistically inconclusive" is used when a test cannot be computed (n < 2, missing data).
+* "Evidence is statistically inconclusive" is used when a test cannot be computed (n < 2, missing data, or
+  zero variance of the paired differences - see below).
 
-### Pre-specified degenerate case (zero variance)
-If all paired differences are identical, the t statistic is undefined. Rule (fixed before confirmatory data):
-if the common value lies on the null side (or equals the null value), p = 1; if it lies strictly on the
-alternative side, p = 0. Such results are flagged in every report. The pilot showed this case is likely for
-H2 and H3 (see `validation_report.md`).
+### Zero-variance (degenerate) case - revised procedure
+If all paired differences are identical, the paired t statistic and its p-value are undefined.
+
+* The test is flagged **not computable**; **no p-value is assigned** (p is never set to 0 or 1 by rule).
+* Decision: **"Evidence is statistically inconclusive"** - for H2 this applies even when every difference is
+  exactly 0, i.e. non-inferiority is never declared merely because all observed differences are zero.
+* Reported instead: the observed (common) difference, n, the zero-variance condition, and a data-derived
+  structural explanation (`structural_note`: D15 ceiling; both bounded-copy algorithms using exactly L-1
+  relays so T is fixed by the shared budget).
+* Holm: a non-computable test keeps its place in the family (m = 5, conservative for the other tests) but
+  receives no adjusted p-value of its own.
+* Exploratory and secondary comparisons follow the same rule.
+
+*History:* an earlier draft assigned p = 0 / p = 1 by rule; it was withdrawn after external review. Re-analysing
+the existing confirmatory batch read-only with the revised rule leaves the five primary decisions unchanged
+and changes the secondary H2 at 50 nodes from "Non-inferiority established" to "inconclusive".
+
+**Possible alternative procedure (NOT active; requires researcher approval before any confirmatory use):** an
+exact distribution-free bound for non-inferiority, e.g. a one-sided sign-test / binomial bound on the
+proportion of seeds with dD15 < -delta, or a seed-block bootstrap lower bound compared with -delta. These
+answer a different question (proportion or resampled bound, not the mean) and would be reported as a
+separate, labelled analysis.
+
+## Supporting (exploratory) metrics
+Not hypotheses and not energy measurements; computed from transfer events: timely deliveries per 100
+completed transfers; time to first relay; time until ceil(L/2) copies exist; time to complete the spray phase
+(every remaining replica holds one token) and % of messages completing it; relays before / after first
+delivery and on undelivered messages; copy-budget utilisation (relays / (L-1)); intermediate transfers per
+delivered message (all relays / delivered messages, NaN if none delivered). Undefined values are NaN, never 0.
+MWS rule counters (walking / fallback relays, friend and stationary exclusions, one-token waits, duplicates
+prevented, capacity-blocked) are reported as counts and rates with explicit denominators
+(`experiments/aggregate.py::RULE_RATES`). Workload diagnostics (destination in range at creation, first
+direct source-destination contact, delivery before direct contact, delivery via relay) use the full contact
+trace for evaluation only and never exclude messages from the primary analysis.
+
+## Approval items (must be explicit before the confirmatory freeze)
+H2 margin (5 pp proposed), meaningful target effects for H1 and H5
+(`statistics.meaningful_target_effects_pp`; shipped as null so `freeze` refuses until set), repetition count
+(30), H4 model (`independent_groups_welch`), zero-variance rule (`inconclusive`).
 
 ## Secondary family
 Density-specific H1-H3 follow-ups (9 tests), Holm within the family, reported separately.
@@ -51,7 +86,15 @@ p-values. Assumption checks: completeness of pairs, Shapiro-Wilk on differences,
 outliers (|z| > 3.5), Wilcoxon signed-rank as a sensitivity analysis (not a test of the mean). Assumption
 checks never change the primary test.
 
+## Confidence intervals
+95 % t intervals describe plausible values of the mean paired difference; a range excluding 0 favours one
+direction, a range crossing 0 is compatible with no difference. They are reported unclipped (they may exceed
+a metric's natural range with few seeds); seed-block bootstrap intervals are range-respecting. Confirmatory
+decisions use the Holm-adjusted p-values; for H2 the matching one-sided bound at the Holm level is reported.
+
 ## Sample size
+The repetition assessment is a planning tool and is computed only for pilot/development data; it is not
+produced from confirmatory data (post-hoc power must not be used to interpret or extend a study).
 Target 30 seeds per configuration. The pilot reports, for candidate target effects of 1, 2, 3 and 5 pp,
 the seeds needed for 80 % power (one-sided paired t) using the pilot SD and its 80 % upper confidence limit,
 at alpha = 0.05 and the Holm worst case alpha/5, plus the minimal detectable effect at n = 30. Target effects

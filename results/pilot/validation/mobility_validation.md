@@ -1,6 +1,6 @@
 # Mobility, contact and workload validation (pilot)
 
-Seeds: [101, 102, 103, 104, 105]. Code version: 1.0.0+src.5f0c2c3d5e. Statistics use the post-warm-up period.
+Seeds: [101, 102, 103, 104, 105]. Code version: 1.0.0+src.93e0046b68.git.743ce3f5.dirty. Statistics use the post-warm-up period.
 These outputs are algorithm-independent and were produced before any routing evaluation.
 
 ## Adequacy checks (pre-specified, algorithm-independent)

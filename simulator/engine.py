@@ -83,6 +83,15 @@ class RoutingEngine:
         self.delivered_time = np.full(self.M, -1, dtype=np.int64)
         self.delivered_hops = np.full(self.M, -1, dtype=np.int64)
         self.msg_transfers = np.zeros(self.M, dtype=np.int64)
+        # Efficiency diagnostics (from actual transfer events; -1 = not reached).
+        self.msg_relays = np.zeros(self.M, dtype=np.int64)
+        self.first_relay_time = np.full(self.M, -1, dtype=np.int64)
+        self.half_copies_time = np.full(self.M, -1, dtype=np.int64)
+        self.spray_complete_time = np.full(self.M, -1, dtype=np.int64)
+        self.relays_before_delivery = np.zeros(self.M, dtype=np.int64)
+        self.relays_after_delivery = np.zeros(self.M, dtype=np.int64)
+        budget = self.algo.initial_tokens()
+        self.half_copies_target = int(np.ceil(budget / 2)) if self.algo.uses_tokens else None
         self.injected = np.zeros(self.M, dtype=bool)
         self.purged = np.zeros(self.M, dtype=bool)
         self.c: Counter = Counter()
@@ -126,6 +135,8 @@ class RoutingEngine:
             steps += 1
             if self.strict and self.algo.uses_tokens:
                 self._check_tokens()
+            if self.algo.uses_tokens and live.size:
+                self._update_spray_completion(t, live)
 
             self.timeline["t"].append(t)
             self.timeline["delivered"].append(int((self.delivered_time >= 0).sum()))
@@ -155,6 +166,19 @@ class RoutingEngine:
     def _reason_dict(arr: np.ndarray) -> dict:
         return {Reason(i).name: int(v) for i, v in enumerate(arr) if v and i in Reason._value2member_map_}
 
+    def _update_spray_completion(self, t: int, live: np.ndarray) -> None:
+        """Spray phase complete = every remaining replica holds a single token (wait phase only).
+
+        A message whose replicas were all lost to buffer drops never completes its spray phase.
+        """
+        pending = live[self.spray_complete_time[live] < 0]
+        if pending.size == 0:
+            return
+        holds = self.store.holds[pending]
+        max_tok = self.store.tokens[pending].max(axis=1)
+        done = holds.any(axis=1) & (max_tok <= 1)
+        self.spray_complete_time[pending[done]] = t
+
     def _check_tokens(self) -> None:
         held = self.store.tokens.sum(axis=1)
         if (held > self.algo.copy_budget).any() or (self.store.tokens < 0).any():
@@ -183,6 +207,8 @@ class RoutingEngine:
             self._drop(victim, s, t, cause="source_injection")
         self.store.store(m, s, self.algo.initial_tokens(), available=t, now=t, hops=0)
         self.c["source_replicas"] += 1
+        if self.half_copies_target is not None and self.half_copies_target <= 1:
+            self.half_copies_time[m] = t
 
     def _drop(self, m: int, node: int, t: int, cause: str) -> None:
         tokens = self.store.remove(m, node)
@@ -315,6 +341,16 @@ class RoutingEngine:
             c["intermediate_transfers"] += 1
             self.msg_transfers[mm] += 1
             self.reason_xfers[reasons[k]] += 1
+            self.msg_relays[mm] += 1
+            if self.first_relay_time[mm] < 0:
+                self.first_relay_time[mm] = t
+            if (self.half_copies_target is not None and self.half_copies_time[mm] < 0
+                    and 1 + self.msg_relays[mm] >= self.half_copies_target):
+                self.half_copies_time[mm] = t
+            if self.delivered_time[mm] < 0:
+                self.relays_before_delivery[mm] += 1
+            else:
+                self.relays_after_delivery[mm] += 1
             if self.event_log:
                 self._log(t, "transfer", snd, rcv, mm, "intermediate", before,
                           keep if uses_tokens else before, give, Reason(reasons[k]).name)

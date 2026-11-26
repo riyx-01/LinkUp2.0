@@ -127,6 +127,9 @@ def describe_run(spec: RunSpec) -> dict:
         "motion_error_rate": eff.get("mws", {}).get("motion_error_rate"),
         "motion_signal": eff.get("mws", {}).get("motion_signal"),
         "workload_type": cfg["traffic"]["workload_type"],
+        "mean_interarrival_s": cfg["traffic"]["mean_interarrival_s"],
+        "min_separation_s": cfg["mobility"]["min_separation_s"],
+        "rejoin_policy": cfg["mobility"]["rejoin_policy"],
     }
 
 
@@ -196,6 +199,9 @@ def execute_task(task: dict) -> list[dict]:
         summary = {"scenario_id": sid, "scenario_hash": scen.scenario_hash, "seed": scen.seed,
                    "node_count": scen.node_count, "communication_radius_m": cfg["communication"]["radius_m"],
                    "workload_type": cfg["traffic"]["workload_type"], "generation_s": gen_time,
+                   "mean_interarrival_s": cfg["traffic"]["mean_interarrival_s"],
+                   "min_separation_s": cfg["mobility"]["min_separation_s"],
+                   "rejoin_policy": cfg["mobility"]["rejoin_policy"],
                    "mobility_key": stable_hash(mobility_key(cfg, scen.seed)), "validation": scen.validation}
         _write_json(root / "raw" / "scenarios" / f"{sid}.json", summary)
         if cfg["output"]["save_scenarios"]:

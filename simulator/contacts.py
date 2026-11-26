@@ -69,6 +69,27 @@ def compute_contact_trace(positions: np.ndarray, radius: float, start: int, end:
     return ContactTrace(start, np.asarray(offsets, dtype=np.int64), data.astype(np.int32))
 
 
+def first_pair_contacts(trace: ContactTrace, node_count: int, a: np.ndarray, b: np.ndarray,
+                        start: np.ndarray, end: np.ndarray) -> np.ndarray:
+    """First second t in [start_i, end_i] at which nodes a_i and b_i are in contact (-1 if never).
+
+    Evaluation-only diagnostic: it looks into the future of the contact trace and must never be
+    given to routing algorithms.
+    """
+    out = np.full(len(a), -1, dtype=np.int64)
+    if trace.pairs.size == 0 or len(a) == 0:
+        return out
+    codes = trace.pairs[:, 0].astype(np.int64) * node_count + trace.pairs[:, 1]
+    step_of = np.repeat(np.arange(trace.steps) + trace.start, np.diff(trace.offsets))
+    for i in range(len(a)):
+        lo, hi = (a[i], b[i]) if a[i] < b[i] else (b[i], a[i])
+        hits = step_of[codes == lo * node_count + hi]
+        hits = hits[(hits >= start[i]) & (hits <= end[i])]
+        if hits.size:
+            out[i] = int(hits.min())
+    return out
+
+
 def contact_events(trace: ContactTrace, node_count: int) -> list[tuple[int, int, int, int]]:
     """Maximal contact intervals as ``(a, b, start_t, end_t_exclusive)``.
 

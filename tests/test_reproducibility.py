@@ -82,9 +82,21 @@ def test_confirmatory_requires_approval(tmp_path, monkeypatch):
         run_batch("confirmatory", ["E4"], root=tmp_path, progress=False)
 
 
+def test_freeze_requires_meaningful_target_effects(tmp_path, monkeypatch):
+    monkeypatch.setattr(approval, "APPROVAL_PATH", tmp_path / "approval.json")
+    fp = approval.current_fingerprint()
+    assert fp["meaningful_target_effects_pp"] == {"H1": None, "H5": None}   # shipped unset on purpose
+    with pytest.raises(approval.ApprovalError, match="target effects"):
+        approval.freeze("Test Approver")
+    assert not (tmp_path / "approval.json").exists()
+
+
 def test_approval_detects_config_change(tmp_path, monkeypatch):
     path = tmp_path / "approval.json"
     monkeypatch.setattr(approval, "APPROVAL_PATH", path)
+    real = approval.current_fingerprint
+    monkeypatch.setattr(approval, "current_fingerprint",
+                        lambda: {**real(), "meaningful_target_effects_pp": {"H1": 2.0, "H5": 2.0}})
     record = approval.freeze("Test Approver")
     assert path.exists() and record["approved_by"] == "Test Approver"
     approval.verify_approval()
@@ -92,6 +104,24 @@ def test_approval_detects_config_change(tmp_path, monkeypatch):
     path.write_text(json.dumps(tampered))
     with pytest.raises(approval.ApprovalError):
         approval.verify_approval()
+    # A forced re-approval archives the previous record instead of discarding it.
+    approval.freeze("Second Approver", force=True)
+    history = path.with_name("confirmatory.approval_history.jsonl").read_text()
+    assert "0" * 64 in history
+
+
+def test_optional_matrix_extends_without_changing_primary():
+    cfg = load_phase_config("pilot")
+    primary = build_matrix(cfg)
+    full = build_matrix(cfg, include_optional=True)
+    assert primary.unique_count == 25
+    assert set(primary.configs) <= set(full.configs)
+    new = full.new_configs_per_experiment()
+    assert {k: new[k] for k in ("X1", "X3", "X3b", "X4", "X2")} == {"X1": 4, "X3": 4, "X3b": 4, "X4": 6, "X2": 2}
+    # X1 at 10 m, X3 at 10 s, X3b at N=100 and X4 primary arms reuse the primary configurations.
+    for exp in ("X1", "X3", "X3b", "X4"):
+        assert any(full.memberships[c][0][0] == "E1" for c in full.configs
+                   if exp in {e for e, _ in full.memberships[c]})
 
 
 def test_batch_is_resumable_and_detects_missing_runs(tmp_path):

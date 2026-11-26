@@ -94,6 +94,52 @@
         "routing.algorithm": ["BSW", "MWS"]
       }
     },
+    "X3": {
+      "title": "OPTIONAL: network-wide traffic-load sensitivity",
+      "purpose": "Exploratory extension (offered load, resource contention)",
+      "role": "exploratory",
+      "optional": true,
+      "priority": 12,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8, "communication.radius_m": 10},
+      "grid": {
+        "traffic.mean_interarrival_s": [10, 5, 2],
+        "routing.algorithm": ["BSW", "MWS"]
+      }
+    },
+    "X3b": {
+      "title": "OPTIONAL: per-node-scaled traffic (offered load proportional to node count)",
+      "purpose": "Exploratory extension (density vs offered workload); 0.001 messages per node per second",
+      "role": "exploratory",
+      "optional": true,
+      "priority": 13,
+      "base": {"routing.copy_budget": 8, "communication.radius_m": 10},
+      "arms": [
+        {"label": "N=50 | interval 20 s | BSW", "nodes.node_count": 50, "traffic.mean_interarrival_s": 20, "routing.algorithm": "BSW"},
+        {"label": "N=50 | interval 20 s | MWS", "nodes.node_count": 50, "traffic.mean_interarrival_s": 20, "routing.algorithm": "MWS"},
+        {"label": "N=100 | interval 10 s | BSW", "nodes.node_count": 100, "traffic.mean_interarrival_s": 10, "routing.algorithm": "BSW"},
+        {"label": "N=100 | interval 10 s | MWS", "nodes.node_count": 100, "traffic.mean_interarrival_s": 10, "routing.algorithm": "MWS"},
+        {"label": "N=200 | interval 5 s | BSW", "nodes.node_count": 200, "traffic.mean_interarrival_s": 5, "routing.algorithm": "BSW"},
+        {"label": "N=200 | interval 5 s | MWS", "nodes.node_count": 200, "traffic.mean_interarrival_s": 5, "routing.algorithm": "MWS"}
+      ]
+    },
+    "X4": {
+      "title": "OPTIONAL: separation-duration sensitivity (rejoin rules)",
+      "purpose": "Exploratory extension (longer separations; algorithm-independent mobility)",
+      "role": "exploratory",
+      "optional": true,
+      "priority": 14,
+      "base": {"nodes.node_count": 100, "routing.copy_budget": 8, "communication.radius_m": 10},
+      "arms": [
+        {"label": "primary (min 300 s, after activity) | BSW", "routing.algorithm": "BSW"},
+        {"label": "primary (min 300 s, after activity) | MWS", "routing.algorithm": "MWS"},
+        {"label": "min 300 s, immediate rejoin | BSW", "routing.algorithm": "BSW", "mobility.rejoin_policy": "immediate_after_minimum"},
+        {"label": "min 300 s, immediate rejoin | MWS", "routing.algorithm": "MWS", "mobility.rejoin_policy": "immediate_after_minimum"},
+        {"label": "min 600 s, after activity | BSW", "routing.algorithm": "BSW", "mobility.min_separation_s": 600},
+        {"label": "min 600 s, after activity | MWS", "routing.algorithm": "MWS", "mobility.min_separation_s": 600},
+        {"label": "min 900 s, after activity | BSW", "routing.algorithm": "BSW", "mobility.min_separation_s": 900},
+        {"label": "min 900 s, after activity | MWS", "routing.algorithm": "MWS", "mobility.min_separation_s": 900}
+      ]
+    },
     "X2": {
       "title": "OPTIONAL: temporally correlated classification errors",
       "purpose": "Exploratory extension",

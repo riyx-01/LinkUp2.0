@@ -32,6 +32,9 @@ class MessageTable:
     relationship: np.ndarray  # (M,) object (str) - see RELATIONSHIPS
     payload_bytes: int
     initial_distance: np.ndarray = field(default_factory=lambda: np.empty(0))  # (M,) metres
+    # Evaluation-only diagnostics (computed from the full contact trace; never passed to algorithms):
+    in_range_at_creation: np.ndarray | None = None     # (M,) bool: source-destination contact at creation
+    first_direct_contact: np.ndarray | None = None     # (M,) int: first source-destination contact second or -1
 
     @property
     def count(self) -> int:

@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 
 from . import config as cfgmod
-from .contacts import ContactTrace, compute_contact_trace
+from .contacts import ContactTrace, compute_contact_trace, first_pair_contacts
 from .groups import GroupAssignment
 from .message import MessageTable
 from .mobility import MobilityTrace, generate_mobility
@@ -130,6 +130,7 @@ class Scenario:
                    mob, contacts, messages, meta["validation"], meta["scenario_hash"])
         if scen.compute_hash() != scen.scenario_hash:
             raise ValueError(f"Scenario file {path} failed its integrity hash check.")
+        attach_message_diagnostics(scen)
         return scen
 
     def compute_hash(self) -> str:
@@ -139,6 +140,14 @@ class Scenario:
                             self.contacts.pairs.astype(np.int32),
                             msg.source.astype(np.int64), msg.destination.astype(np.int64),
                             msg.created.astype(np.int64), msg.expiry.astype(np.int64))
+
+
+def attach_message_diagnostics(scen: "Scenario") -> None:
+    """Evaluation-only source-destination contact diagnostics (not part of the scenario hash)."""
+    msg = scen.messages
+    first = first_pair_contacts(scen.contacts, scen.node_count, msg.source, msg.destination, msg.created, msg.expiry)
+    msg.first_direct_contact = first
+    msg.in_range_at_creation = first == msg.created
 
 
 def scenario_id_for(cfg: dict, seed: int) -> str:
@@ -159,6 +168,7 @@ def build_scenario(cfg: dict, seed: int, mobility: MobilityTrace | None = None) 
                     scenario_id=scenario_id_for(cfg, seed), mobility=mobility, contacts=contacts,
                     messages=messages, validation=validation, scenario_hash="")
     scen.scenario_hash = scen.compute_hash()
+    attach_message_diagnostics(scen)
     return scen
 
 

@@ -21,6 +21,7 @@ import pandas as pd  # noqa: E402
 import streamlit as st  # noqa: E402
 import streamlit.components.v1 as components  # noqa: E402
 
+from analysis.research_summary import PLAIN_GUIDE  # noqa: E402
 from dashboard.explorer_export import build_payload, render_html  # noqa: E402
 
 st.set_page_config(page_title="LinkUp Explorer", layout="wide")
@@ -82,6 +83,9 @@ def results_tab() -> None:
         st.info("No results saved for this stage yet.")
         return
     runs = pd.read_csv(runs_path)
+    with st.expander("How to read these numbers (plain language)", expanded=True):
+        for term, text in PLAIN_GUIDE:
+            st.markdown(f"- **{term}**: {text}")
     if phase != "confirmatory":
         st.warning("These are trial results, not the final experiment. They must not be used as evidence.")
     e1 = runs[runs["experiment_id"].astype(str).str.contains("E1") & (runs["run_status"] == "ok")]
@@ -97,8 +101,19 @@ def results_tab() -> None:
     if tests.exists():
         st.subheader("Formal tests")
         df = pd.read_csv(tests)
-        cols = ["hypothesis", "title", "n", "mean_diff", "ci95_low", "ci95_high", "p_holm", "decision"]
+        cols = ["hypothesis", "title", "n", "mean_diff", "ci95_low", "ci95_high", "p_holm", "decision",
+                "zero_variance_note", "structural_note"]
         st.dataframe(df[[c for c in cols if c in df.columns]], use_container_width=True, hide_index=True)
+        st.caption("mean_diff = average MWS minus BSW difference (percentage points for D5/D15). An empty p_holm "
+                   "means the test could not be computed (for example, every difference was identical).")
+    eff = proc / "efficiency_metrics.csv"
+    if eff.exists():
+        st.subheader("How copies were spent (supporting metrics)")
+        st.dataframe(pd.read_csv(eff), use_container_width=True, hide_index=True)
+    sens = proc / "sensitivity_X1_X4.csv"
+    if sens.exists() and sens.stat().st_size > 5:
+        st.subheader("Sensitivity checks (exploratory)")
+        st.dataframe(pd.read_csv(sens), use_container_width=True, hide_index=True)
     figs = sorted((ROOT / "results" / phase / "figures").glob("fig*.png"))
     if figs:
         st.subheader("Charts")

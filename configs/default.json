@@ -98,7 +98,10 @@
     "bootstrap_resamples": 5000,
     "bootstrap_seed": 20240531,
     "planned_repetitions": 30,
-    "h4_model": "independent_groups_welch"
+    "h4_model": "independent_groups_welch",
+    "zero_variance_rule": "inconclusive",
+    "meaningful_target_effects_pp": {"H1": null, "H5": null},
+    "meaningful_target_effects_note": "Smallest differences in D5 (percentage points) the researcher considers practically meaningful. Must be set (not null) and approved before `main.py freeze` will run."
   },
   "output": {
     "event_log": false,
