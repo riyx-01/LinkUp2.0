@@ -271,7 +271,7 @@ class handler(BaseHTTPRequestHandler):
                 "H2": {"metric": "D15 delivery ratio", "comparison": "MWS vs BSW (Non-inferiority)", "result": "Non-inferiority established (p_holm = 8.5e-43)"},
                 "H3": {"metric": "Overhead ratio", "comparison": "MWS vs BSW", "result": "Fail to reject null (p_holm = 0.2309)"},
                 "H4": {"metric": "Density sensitivity", "test": "Welch ANOVA", "result": "Fail to reject null (p_holm = 0.8949)"},
-                "H5": {"metric": "Energy efficiency", "comparison": "MWS vs BSW", "result": "Reject null: Significant advantage (p_holm = 3.19e-07)"}
+                "H5": {"metric": "D5 delivery ratio", "comparison": "MWS immediate vs historical motion signal", "result": "Reject null: Significant advantage (p_holm = 3.19e-07)"}
             }
             self.wfile.write(json.dumps(data, indent=2).encode("utf-8"))
             return
@@ -315,7 +315,7 @@ def app(environ: dict, start_response: callable) -> list[bytes]:
             "H2": {"metric": "D15 delivery ratio", "comparison": "MWS vs BSW (Non-inferiority)", "result": "Non-inferiority established (p_holm = 8.5e-43)"},
             "H3": {"metric": "Overhead ratio", "comparison": "MWS vs BSW", "result": "Fail to reject null (p_holm = 0.2309)"},
             "H4": {"metric": "Density sensitivity", "test": "Welch ANOVA", "result": "Fail to reject null (p_holm = 0.8949)"},
-            "H5": {"metric": "Energy efficiency", "comparison": "MWS vs BSW", "result": "Reject null: Significant advantage (p_holm = 3.19e-07)"}
+            "H5": {"metric": "D5 delivery ratio", "comparison": "MWS immediate vs historical motion signal", "result": "Reject null: Significant advantage (p_holm = 3.19e-07)"}
         }
         return [json.dumps(data, indent=2).encode("utf-8")]
 

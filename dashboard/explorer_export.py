@@ -73,7 +73,7 @@ def build_payload(nodes: int = 100, seed: int = 1, radius: float = 10.0, copy_bu
                   workload: str = "separated_friends",
                   algorithms: tuple[str, ...] = ("BSW", "MWS", "DirectDelivery", "Epidemic"),
                   motion_signal: str = "immediate", error_rate: float = 0.0,
-                  default_style: str = "minimal") -> dict:
+                  default_style: str = "minimal", include_results: bool = True) -> dict:
     """Run the simulator and return the explorer payload (JSON-serialisable)."""
     check_phase_seeds("development", [seed])
     base = apply_overrides(load_phase_config("development"), {
@@ -128,6 +128,8 @@ def build_payload(nodes: int = 100, seed: int = 1, radius: float = 10.0, copy_bu
             "fallback": float(base["routing"]["mws"]["fallback_s"]), "t0": t0, "t1": t1,
             "d5": int(base["metrics"]["d5_threshold_s"]), "lifetime": int(base["traffic"]["message_lifetime_s"]),
             "workload": workload, "motionSignal": motion_signal, "errorRate": float(error_rate),
+            "dwell": {k: list(v) for k, v in base["mobility"]["dwell_s"].items()},
+            "minSeparation": float(base["mobility"]["min_separation_s"]),
             "defaultStyle": default_style if default_style in STYLES else "minimal",
             "venue": {"w": venue["width_m"], "h": venue["height_m"],
                       "zones": [{"key": k, "label": ZONE_LABELS.get(k, k), "x0": z["x"][0], "x1": z["x"][1],
@@ -142,6 +144,89 @@ def build_payload(nodes: int = 100, seed: int = 1, radius: float = 10.0, copy_bu
         "messages": [[i, int(msgs.source[i]), int(msgs.destination[i]), int(msgs.created[i]), int(msgs.expiry[i]),
                       str(msgs.relationship[i])] for i in range(msgs.count)],
         "runs": runs,
+        "results": load_results_summary("confirmatory") if include_results else None,
+    }
+
+
+ROOT = Path(__file__).resolve().parent.parent
+ALG_ORDER = ("DirectDelivery", "Epidemic", "BSW", "MWS")
+
+
+def _num(x) -> float | None:
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        return None
+    return None if x != x else round(x, 4)  # NaN -> None (JSON null)
+
+
+def _sig(x) -> float | None:
+    """Keep small p-values (e.g. 1e-43) instead of rounding them to 0."""
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        return None
+    return None if x != x else float(f"{x:.3g}")
+
+
+def load_results_summary(phase: str = "confirmatory", root: Path | None = None) -> dict | None:
+    """Plain summary of a finished batch for the explorer's "What we found" tab.
+
+    Every number is read from the batch's own processed CSVs (run_results, hypothesis_tests,
+    data_quality); nothing is typed in by hand. Returns None if the batch has not been run.
+    """
+    import pandas as pd
+
+    proc = (root or ROOT) / "results" / phase / "processed"
+    runs_csv, tests_csv = proc / "run_results.csv", proc / "hypothesis_tests.csv"
+    if not runs_csv.exists() or not tests_csv.exists():
+        return None
+    r = pd.read_csv(runs_csv)
+    ok = r[r["run_status"] == "ok"]
+
+    def has(exp):
+        return ok[ok["experiment_id"].astype(str).str.split("|").apply(lambda ids: exp in ids)]
+
+    e1 = []
+    for (n, alg), g in has("E1").groupby(["node_count", "algorithm"]):
+        e1.append({"n": int(n), "alg": alg, "d5": _num(g["d5_percent"].mean()), "d15": _num(g["d15_percent"].mean()),
+                   "t": _num(g["transfers_per_message"].mean()), "lat": _num(g["median_latency_s"].mean()),
+                   "drops": _num(g["buffer_drops"].mean()), "runs": int(len(g))})
+    e2 = [{"alg": a, "budget": int(b), "d5": _num(g["d5_percent"].mean())}
+          for (a, b), g in has("E2").groupby(["algorithm", "copy_budget"])]
+    e4 = [{"signal": s, "d5": _num(g["d5_percent"].mean())}
+          for s, g in has("E4").groupby(has("E4")["motion_signal"].fillna("immediate"))]
+    e5x = has("E5")
+    e5 = [{"alg": a, "err": _num(e), "d5": _num(g["d5_percent"].mean())}
+          for (a, e), g in e5x.groupby([e5x["algorithm"], e5x["motion_error_rate"].fillna(0.0)])]
+    e6 = [{"alg": a, "workload": w, "d5": _num(g["d5_percent"].mean())}
+          for (a, w), g in has("E6").groupby(["algorithm", "workload_type"])]
+
+    t = pd.read_csv(tests_csv)
+    tests = []
+    for _, row in t.iterrows():
+        tests.append({"h": row["hypothesis"], "title": row.get("title"), "diff": _num(row.get("mean_diff")),
+                      "lo": _num(row.get("ci95_low")), "hi": _num(row.get("ci95_high")),
+                      "pHolm": _sig(row.get("p_holm")), "decision": str(row.get("decision")),
+                      "note": "" if pd.isna(row.get("structural_note")) else str(row.get("structural_note")),
+                      "zeroVar": bool(row.get("degenerate_zero_variance") is True or
+                                      str(row.get("degenerate_zero_variance")) == "True")})
+    quality = {"pass": 0, "total": 0}
+    dq = proc / "data_quality.csv"
+    if dq.exists():
+        q = pd.read_csv(dq)
+        quality = {"pass": int((q["status"] == "PASS").sum()), "total": int(len(q))}
+    targets = None
+    try:
+        from simulator.config import load_config
+        targets = load_config(f"{phase}.json")["statistics"].get("meaningful_target_effects_pp")
+    except Exception:  # config optional for the page
+        targets = None
+    return {
+        "phase": phase, "runs": int(len(r)), "ok": int(len(ok)), "failed": int(len(r) - len(ok)),
+        "seeds": [int(r["seed"].min()), int(r["seed"].max())], "nSeeds": int(r["seed"].nunique()),
+        "codeVersions": sorted(map(str, r["code_version"].unique())), "quality": quality,
+        "targets": targets, "e1": e1, "e2": e2, "e4": e4, "e5": e5, "e6": e6, "tests": tests,
     }
 
 

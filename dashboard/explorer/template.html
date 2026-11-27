@@ -158,6 +158,74 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
 .tour .row { display:flex; justify-content:space-between; gap:8px; margin-top:14px; }
 .spot { outline:4px solid var(--carrier) !important; outline-offset:4px; position:relative; z-index:21; }
 [hidden] { display:none !important; }
+
+/* method identity colours (validated categorical palette; separate dark-mode steps) */
+:root { --m-DirectDelivery:#f2a600; --m-Epidemic:#00b894; --m-BSW:#257de0; --m-MWS:#f47230; }
+:root[data-style="cyberpunk"] { --m-DirectDelivery:#c98a00; --m-Epidemic:#00a985; --m-BSW:#3a86e6; --m-MWS:#ea6a28; }
+
+/* page tabs */
+.tabs { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 14px; }
+.tabs .btn { font-size:15px; font-weight:700; padding:9px 18px; }
+
+/* the idea in four steps */
+.intro { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; margin-bottom:14px; }
+@media (max-width: 900px) { .intro { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .intro { grid-template-columns:minmax(0, 1fr); } }
+.intro .card { padding:12px 14px; }
+.intro .stepno { font-family:var(--font-num); font-weight:700; color:var(--carrier); font-size:13px; }
+.intro h3 { font-size:15px; margin:2px 0 4px; }
+.intro p { margin:0; font-size:13.5px; color:var(--muted); }
+
+/* right-now banner */
+.nowbar { margin-bottom:14px; border-left-width:6px; border-left-color:var(--carrier); }
+.nowbar .line { font-size:18px; font-weight:650; margin:4px 0 0; line-height:1.35; }
+.nowbar .line + .line { margin-top:8px; }
+.nowbar .why { margin:8px 0 0; color:var(--muted); font-size:14px; }
+.nowbar .mtag { display:inline-block; font-size:12px; font-weight:700; padding:1px 8px; margin-right:6px; vertical-align:2px;
+  border:var(--bw) solid var(--line); border-radius:var(--btn-radius); }
+
+/* method rule card */
+.rules { list-style:none; margin:8px 0 2px; padding:0; display:grid; gap:4px; font-size:13.5px; }
+.rules li { display:grid; grid-template-columns:24px 1fr; gap:6px; align-items:start; }
+.rules .ic { font-family:var(--font-num); font-weight:800; text-align:center; border:var(--bw) solid var(--line);
+  border-radius:4px; line-height:18px; font-size:12px; }
+.rules .yes .ic { color:var(--ok); border-color:var(--ok); }
+.rules .no .ic { color:var(--sep); border-color:var(--sep); }
+.rules .later .ic, .rules .limit .ic { color:var(--muted); }
+.mswatch { display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+
+/* bars (scoreboard and results) */
+.bars { display:grid; gap:6px; margin:6px 0 4px; }
+.bar { display:grid; grid-template-columns:minmax(90px, 150px) 1fr 58px; gap:8px; align-items:center; font-size:13px; }
+.bar .track2 { height:14px; background:var(--soft); border-radius:4px; overflow:hidden; }
+.bar .fill { height:100%; border-radius:0 4px 4px 0; min-width:2px; }
+.bar .val { font-family:var(--font-num); text-align:right; }
+.bar .who { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bar.me .who, .bar.me .val { font-weight:700; }
+.metric-h { font-weight:700; margin-top:10px; font-size:14px; }
+.metric-h small { font-weight:400; color:var(--muted); }
+
+/* results view */
+.res { display:grid; gap:16px; }
+.res .grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; }
+.res h2 { font-size:18px; }
+.res p { margin:6px 0; }
+.answer { border-left-width:6px; border-left-color:var(--carrier); }
+.answer ul { margin:6px 0 0; padding-left:20px; }
+.answer li { margin:6px 0; font-size:15px; }
+.hyp { display:grid; gap:6px; }
+.hyp .q { font-weight:700; font-size:15px; }
+.verdict { display:inline-block; font-weight:700; padding:3px 10px; border:var(--bw) solid var(--line); border-radius:var(--btn-radius); font-size:13.5px; }
+.verdict.yes { color:var(--ok); border-color:var(--ok); }
+.verdict.no { color:var(--muted); }
+.formal { font-size:12.5px; color:var(--muted); }
+.groupttl { font-family:var(--font-num); font-size:12.5px; color:var(--muted); margin-top:10px; }
+.stat { font-family:var(--font-num); font-size:24px; font-weight:700; }
+.statrow { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; }
+.statrow .card { padding:10px 14px; }
+table.plain { width:100%; border-collapse:collapse; font-size:13.5px; }
+table.plain th, table.plain td { text-align:left; padding:5px 6px; border-bottom:1px solid var(--line); }
+table.plain td.num { text-align:right; }
 </style>
 </head>
 <body>
@@ -165,9 +233,9 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
   <header class="top">
     <div>
       <h1>LinkUp Explorer</h1>
-      <p>A replay of a simulated festival with no mobile signal. Phones pass messages person to person whenever two people
-         come within <b class="num" id="radiusTxt">10</b> metres of each other. Follow one message and see how each
-         method gets it to a separated friend.</p>
+      <p>At a packed festival the mobile network is jammed, so friends who get separated cannot text each other.
+         LinkUp lets phones pass a message <b>hand to hand</b> through the crowd, phone to phone, whenever two people are
+         within <b class="num" id="radiusTxt">10</b> metres. This page replays one simulated festival so you can watch it happen.</p>
     </div>
     <div class="styles">
       <span class="lbl">Style</span>
@@ -179,6 +247,23 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
       <button class="btn primary" id="helpBtn">How it works</button>
     </div>
   </header>
+
+  <nav class="tabs" aria-label="Pages">
+    <button class="btn" data-view="watch">&#x25B6; Watch one festival</button>
+    <button class="btn" data-view="results">What we found in 30 festivals</button>
+  </nav>
+
+  <div id="watchView">
+  <section class="intro" id="intro" aria-label="The idea in four steps">
+    <div class="card"><div class="stepno">1 &middot; THE PROBLEM</div><h3>The network is jammed</h3>
+      <p>Thousands of phones share one mobile tower. Bars look full, but messages do not get through.</p></div>
+    <div class="card"><div class="stepno">2 &middot; WHAT STILL WORKS</div><h3>Phone to phone</h3>
+      <p>Phones can still talk directly to any phone within <b class="num" data-radius>10</b> m, like Bluetooth or Wi-Fi Direct.</p></div>
+    <div class="card"><div class="stepno">3 &middot; THE IDEA</div><h3>Pass it on</h3>
+      <p>A message hops from person to person, carried around the festival, until someone carrying it comes near the friend.</p></div>
+    <div class="card"><div class="stepno">4 &middot; OUR QUESTION</div><h3>Who should carry it?</h3>
+      <p>Everyone? Nobody? Anyone you bump into? Or people who are <b>walking</b>? We compare four ways on the same crowd.</p></div>
+  </section>
 
   <section class="controls" id="controls">
     <label><span class="lbl">Message to follow</span><select id="msgSel" aria-label="Message to follow"></select></label>
@@ -194,6 +279,11 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
 
   <main class="layout">
     <section>
+      <div class="card nowbar" id="nowBar" aria-live="polite">
+        <span class="lbl">Right now</span>
+        <div id="nowLines"></div>
+        <p class="why" id="nowWhy"></p>
+      </div>
       <div class="maps" id="maps"></div>
       <div class="card timeline" id="timeline">
         <div class="tl-row">
@@ -229,6 +319,16 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
         <div id="msgText"></div>
         <div class="badgeline" id="msgBadges"></div>
       </div>
+      <div class="card" id="whyCard">
+        <h2>Why are the people moving?</h2>
+        <p style="margin:0 0 6px">Like real festival-goers, everyone <b>walks between the stages, the food court, the toilets and the
+          entrance</b>, then stays there for a while (<span id="dwellTxt">5&ndash;10 min at a stage</span>). Friends move together as a group.
+          Now and then someone <b>wanders off alone</b> and comes back after at least <span id="sepTxt">5</span> minutes.</p>
+        <p class="muted" style="margin:0 0 8px;font-size:13.5px"><b>Why it matters:</b> a message can only jump between two phones when
+          their owners come within <span class="num" data-radius>10</span> m. Walking is what creates new meetings, and the "walker-first"
+          method uses exactly this.</p>
+        <div id="whyNow"></div>
+      </div>
       <div class="card" id="storyCard">
         <h2>What has happened so far</h2>
         <ol class="story" id="story" aria-live="polite"></ol>
@@ -248,6 +348,10 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
         <div id="personText" class="muted">Click any dot on the map to see who they are, whether they are walking,
           who their friends are and which phones are within reach.</div>
       </div>
+      <div class="card" id="scoreCard">
+        <h2>Scoreboard for this festival</h2>
+        <div id="scoreText"></div>
+      </div>
       <div class="card" id="nowCard">
         <h2>Whole festival, right now</h2>
         <div id="nowText"></div>
@@ -255,7 +359,12 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
       <details class="card" id="gloss">
         <summary>What do these words mean?</summary>
         <dl class="gloss">
+          <dt>Priya and Arjun</dt><dd>Made-up names for the sender and the friend of the message we follow, so the story is easy to tell. In the simulation they are just two numbered phones.</dd>
           <dt>Person / phone</dt><dd>Each dot is one festival-goer whose phone runs LinkUp. Other attendees are not shown.</dd>
+          <dt>Hand-delivery only (Direct Delivery)</dt><dd>Only the sender carries the message, until they meet the friend in person.</dd>
+          <dt>Copy to everyone (Epidemic)</dt><dd>Every phone copies the message to every phone it meets. Fast, but floods phones with copies.</dd>
+          <dt>Limited copies (Binary Spray-and-Wait, BSW)</dt><dd>At most 8 copies. Each carrier gives half of its spare copies to anyone new it meets; with one copy left it just waits to meet the friend.</dd>
+          <dt>Walker-first limited copies (MWS, our method)</dt><dd>The same 8-copy limit, but copies go to strangers who are walking, never to the carrier's own friends; standing strangers are allowed only once the message is 60 s old.</dd>
           <dt>Walking / standing</dt><dd>Filled dots are walking between areas; hollow dots are standing at a stage, the food court and so on.</dd>
           <dt>Friend group</dt><dd>People who came together. They usually move together, but sometimes one wanders off.</dd>
           <dt>Separated</dt><dd>Someone who has wandered away from their friends. Most messages are written to a separated friend.</dd>
@@ -274,6 +383,9 @@ dl.gloss dd { margin:2px 0 0; color:var(--muted); font-size:13.5px; }
       <div class="card note" id="aboutCard"></div>
     </aside>
   </main>
+  </div>
+
+  <section id="resultsView" class="res" hidden aria-label="Experiment results"></section>
 </div>
 <div class="tip" id="tip"></div>
 <div class="tour-back" id="tourBack" hidden></div>
@@ -353,46 +465,98 @@ function relText(rel) {
   if (rel === "random_same_group") return "their friend";
   return "another festival-goer,";
 }
+/* Made-up names for the followed message's sender and friend, so the story reads like one. */
+const SENDER = "Priya", FRIEND = "Arjun";
+const isFriendOf = (a, b) => GROUP[a] >= 0 && GROUP[a] === GROUP[b];
+function who(n, m) {
+  const msg = MSG[m];
+  if (n === msg.src) return SENDER;
+  if (n === msg.dst) return FRIEND;
+  if (isFriendOf(n, msg.src)) return `${SENDER}'s friend (phone ${n})`;
+  return `a stranger (phone ${n})`;
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 function storyFor(run, m) {
   const msg = MSG[m], out = [];
-  let start = `Phone ${msg.src} writes a message to ${relText(msg.rel)} phone ${msg.dst}.`;
-  if (sepState(msg.created, msg.dst)) start += ` Phone ${msg.dst} has wandered away from the group.`;
-  else if (sepState(msg.created, msg.src)) start += ` Phone ${msg.src} is the one who wandered away from the group.`;
-  if (run.usesTokens) start += ` The message may be copied at most ${run.budget} times in total.`;
+  const friendWord = relText(msg.rel) === "their friend" ? `${SENDER}'s friend ${FRIEND}` : `${FRIEND}, another festival-goer`;
+  let start = `${SENDER} (phone ${msg.src}) writes "Where are you?" to ${friendWord} (phone ${msg.dst}).`;
+  if (sepState(msg.created, msg.dst)) start += ` ${FRIEND} has wandered away from the group, so they are apart.`;
+  else if (sepState(msg.created, msg.src)) start += ` ${SENDER} is the one who wandered away from the group.`;
+  const d0 = Math.hypot(px(msg.created, msg.src) - px(msg.created, msg.dst), py(msg.created, msg.src) - py(msg.created, msg.dst));
+  start += ` They are ${Math.round(d0)} m apart${d0 <= META.radius ? ", already within reach" : `, too far for a direct send (${META.radius} m)`}.`;
+  if (run.key === "DirectDelivery") start += ` With this method nobody helps: ${SENDER} must meet ${FRIEND} in person.`;
+  else if (run.key === "Epidemic") start += ` With this method every phone met gets a copy, without limit.`;
+  else if (run.usesTokens) start += ` This method allows at most ${run.budget} copies in total.`;
   out.push({ t: msg.created, text: start });
   let deliveredAt = -1;
   for (const e of run.byMsg.get(m) || []) {
     const [t, k, a, b, , give, keep, rule] = e;
     if (k === 1) {
+      const wb = walking(t, b) ? "walking" : "standing still";
       let why = "";
-      if (rule === 3) why = ` Phone ${b} is walking, and walkers are preferred because they move around and meet more people.`;
-      else if (rule === 4) why = ` Phone ${b} is standing still. That is allowed now because the message is over ${META.fallback} seconds old.`;
-      else if (rule === 5) why = ` Phone ${b} is not one of the sender's friends.`;
-      else if (rule === 2) why = ` Phone ${b} did not have the message yet.`;
-      else if (rule === 1) why = ` Everyone who does not have it gets a copy.`;
+      if (rule === 3) why = ` Why this person? They are a stranger who is walking, and walkers move around and meet more people.`;
+      else if (rule === 4) why = ` Why this person? They are standing still, which is normally skipped, but the message is now over ${META.fallback} s old, so standing strangers are allowed too.`;
+      else if (rule === 5) why = ` Why this person? They are not one of the carrier's friends.`;
+      else if (rule === 2) why = ` Why this person? This method gives a copy to anyone new it meets. This one was ${wb}${isFriendOf(a, b) ? " and is a friend of the carrier, so they will probably stay together" : ""}.`;
+      else if (rule === 1) why = ` This method copies to everyone it meets.`;
       let copies = "";
-      if (run.usesTokens) copies = give > 1 ? ` Phone ${b} now controls ${give} copies and can pass some on; phone ${a} keeps ${keep}.`
-                                            : ` Phone ${b} got the last copy it may hold, so it will only give it to the friend; phone ${a} keeps ${keep}.`;
-      out.push({ t, text: `Phone ${a} met phone ${b} and passed a copy.${why}${copies}` });
+      const giver = a === msg.src ? SENDER : `Phone ${a}`;
+      if (run.usesTokens) copies = give > 1 ? ` Phone ${b} now holds ${give} of the copies and can share more; ${giver} keeps ${keep}.`
+                                            : ` Phone ${b} got a single copy, so it will only pass it to ${FRIEND}. ${giver} keeps ${keep}.`;
+      out.push({ t, text: `${cap(who(a, m))} met ${who(b, m)} and handed over a copy.${why}${copies}` });
     } else if (k === 2) {
       deliveredAt = t;
-      const who = a === msg.src ? `The sender met their friend in person.` : `Phone ${a} carried a copy all the way to the friend.`;
+      const how = a === msg.src ? `${SENDER} bumped into ${FRIEND} in person.` : `${cap(who(a, m))} carried a copy all the way to ${FRIEND}.`;
       const within = t - msg.created <= META.d5;
-      out.push({ t, ok: true, text: `Delivered! ${who} It took ${dur(t - msg.created)}, ${within ? "within" : "longer than"} the 5-minute target.` });
+      out.push({ t, ok: true, text: `Delivered! ${how} It took ${dur(t - msg.created)}, ${within ? "within" : "longer than"} the 5-minute target.` });
     } else if (k === 3) {
-      out.push({ t, text: `Phone ${a}'s message storage was full, so its copy of this message was deleted.` });
+      out.push({ t, text: `The phone of ${who(a, m)} was full of other messages, so its copy of this one was deleted.` });
     }
   }
   const left = holders(run, m, msg.expiry - 1).size;
   out.push({ t: msg.expiry, text: deliveredAt < 0
-    ? `Time is up: the message was never delivered and its ${left} remaining cop${left === 1 ? "y was" : "ies were"} deleted after 15 minutes.`
+    ? `Time is up: ${FRIEND} never got the message, and its ${left} remaining cop${left === 1 ? "y was" : "ies were"} deleted after 15 minutes.`
     : `After 15 minutes the ${left} leftover cop${left === 1 ? "y was" : "ies were"} deleted. (Carriers are never told that the message already arrived.)` });
   return out;
 }
 
+/* What each method allows, in plain words (drawn under each map). */
+function rulesFor(run) {
+  const L = META.copyBudget, F = META.fallback;
+  const R = (cls, ic, text) => `<li class="${cls}"><span class="ic">${ic}</span><span>${text}</span></li>`;
+  switch (run.key) {
+    case "DirectDelivery": return R("yes", "✓", `${FRIEND} &mdash; only when ${SENDER} meets ${FRIEND} in person`)
+      + R("no", "✗", "Anyone else &mdash; never. Nobody helps.");
+    case "Epidemic": return R("yes", "✓", `${FRIEND} &mdash; as soon as any carrier meets ${FRIEND}`)
+      + R("yes", "✓", "Everyone met &mdash; friend or stranger, walking or standing")
+      + R("limit", "∞", "No limit on copies, so phones fill up");
+    case "BSW": return R("yes", "✓", `${FRIEND} &mdash; as soon as any carrier meets ${FRIEND}`)
+      + R("yes", "✓", "Anyone new who is met &mdash; walking or standing, friend or stranger")
+      + R("limit", String(L), `At most ${L} copies. Each carrier gives half of its spare copies away; with 1 left it just waits.`);
+    case "MWS": return R("yes", "✓", `${FRIEND} &mdash; as soon as any carrier meets ${FRIEND}`)
+      + R("yes", "✓", "Strangers who are <b>walking</b> (they meet more people)")
+      + R("later", "⏱", `Strangers standing still &mdash; only once the message is ${F} s old`)
+      + R("no", "✗", "The carrier's own friends (they stay together, so no new reach)")
+      + R("limit", String(L), `At most ${L} copies, shared out by halves, exactly like Limited copies`);
+  }
+  return "";
+}
+
 /* ------------------------------------------------------------------ state */
-const state = { time: T0, playing: false, speed: 15, msg: 0, mode: "single", methodA: "MWS", methodB: "BSW",
-                selected: -1, hover: -1, style: "minimal" };
+const state = { time: T0, playing: false, speed: 15, msg: 0, mode: "compare", methodA: "MWS", methodB: "BSW",
+                selected: -1, hover: -1, style: "minimal", view: "watch" };
+/* Suggested example: the first message (in time order) that both shown methods delivered, and that needed
+   hand-overs (not delivered in the first minute). Chosen by a fixed rule, not by which method looked better. */
+function suggestedMessage() {
+  const a = RUNS.MWS || D.runs[0], b = RUNS.BSW || D.runs[Math.min(1, D.runs.length - 1)];
+  for (const m of MSG) {
+    const da = a.delivered[m.id], db = b.delivered[m.id];
+    if (da >= 0 && db >= 0 && da - m.created >= 60 && db - m.created >= 60 && da - m.created <= 600 && db - m.created <= 600) return m.id;
+  }
+  return 0;
+}
+state.msg = suggestedMessage();
+const SUGGESTED = state.msg;
 const runKeys = D.runs.map(r => r.key);
 if (!RUNS[state.methodA]) state.methodA = runKeys[0];
 if (!RUNS[state.methodB]) state.methodB = runKeys[Math.min(1, runKeys.length - 1)];
@@ -415,12 +579,13 @@ const mapsEl = document.getElementById("maps");
 function makeView(side) {
   const fig = document.createElement("figure");
   fig.className = "card mapcard";
-  fig.innerHTML = `<figcaption><span class="lbl">${side === "A" ? "Map" : "Map, compared method"}</span><span class="mname"></span><span class="mdesc"></span>
-    <details class="how"><summary>How does it decide?</summary><p class="mlong"></p></details></figcaption>
+  fig.innerHTML = `<figcaption><span class="lbl">${side === "A" ? "Left map" : "Right map"}</span><span class="mname"></span><span class="mdesc"></span>
+    <div class="lbl" style="margin-top:6px">Who gets a copy?</div><ul class="rules"></ul>
+    <details class="how"><summary>In research language</summary><p class="mlong"></p></details></figcaption>
     <canvas aria-label="Festival map"></canvas><div class="badgeline"></div>`;
   mapsEl.appendChild(fig);
   const v = { side, fig, canvas: fig.querySelector("canvas"), name: fig.querySelector(".mname"), desc: fig.querySelector(".mdesc"),
-              long: fig.querySelector(".mlong"), badges: fig.querySelector(".badgeline"), w: 0, h: 0, scale: 1, pad: 12, top: 18 };
+              long: fig.querySelector(".mlong"), rules: fig.querySelector(".rules"), badges: fig.querySelector(".badgeline"), w: 0, h: 0, scale: 1, pad: 12, top: 18 };
   v.ctx = v.canvas.getContext("2d");
   v.canvas.addEventListener("click", ev => { const n = hit(v, ev); state.selected = n === state.selected ? -1 : n; render(true); });
   v.canvas.addEventListener("mousemove", ev => { state.hover = hit(v, ev); showTip(v, ev); });
@@ -557,10 +722,13 @@ function drawView(v) {
     const [fx, fy] = P[msg.src], [tx, ty] = P[msg.dst];
     const FX = sx(v, fx), FY = sy(v, fy), TX = sx(v, tx), TY = sy(v, ty);
     ctx.fillStyle = C.from; ctx.fillRect(FX - r - 1, FY - r - 1, 2 * r + 2, 2 * r + 2);
-    tag(ctx, FX, FY + r + 10, "FROM", C.from, C.panel);
+    tag(ctx, FX, FY + r + 10, SENDER.toUpperCase() + " (FROM)", C.from, C.panel);
     const dl = run.delivered[state.msg], got = dl >= 0 && dl <= t;
     ctx.fillStyle = got ? C.ok : C.to; ctx.beginPath(); ctx.moveTo(TX, TY - r - 3); ctx.lineTo(TX + r + 3, TY); ctx.lineTo(TX, TY + r + 3); ctx.lineTo(TX - r - 3, TY); ctx.closePath(); ctx.fill();
-    tag(ctx, TX, TY + r + 10, got ? "TO ✓" : "TO", got ? C.ok : C.to, C.panel);
+    tag(ctx, TX, TY + r + 10, FRIEND.toUpperCase() + (got ? " ✓ GOT IT" : " (TO)"), got ? C.ok : C.to, C.panel);
+    // Arjun's reach circle: a carrier must step inside it to deliver.
+    if (!got) { ctx.strokeStyle = C.to; ctx.lineWidth = 1.2; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.arc(TX, TY, META.radius * v.scale, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
   }
   if (state.selected >= 0) { const [x, y] = P[state.selected]; ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.strokeRect(sx(v, x) - r - 3, sy(v, y) - r - 3, 2 * r + 6, 2 * r + 6); }
   // status line under the map (same numbers as the event log)
@@ -596,10 +764,10 @@ function renderLegend() {
   const items = [
     ["walk", "Person walking (the short tail shows where they came from)"],
     ["stand", "Person standing still"],
-    ["from", "Sender of the followed message (FROM)"],
-    ["to", "Friend the message is for (TO)"],
-    ["ok", "Friend after the message has arrived (TO ✓)"],
-    ["carrier", "Phone carrying a copy; the number shows how many copies it controls"],
+    ["from", `${SENDER}, who wrote the message (FROM)`],
+    ["to", `${FRIEND}, the separated friend it is for (TO). The dashed circle is ${FRIEND}'s ${META.radius} m reach.`],
+    ["ok", `${FRIEND} after the message has arrived (✓ GOT IT)`],
+    ["carrier", "Thick ring = this phone carries a copy. The number = how many of the copies it still controls."],
     ["xfer", "A copy being handed over right now (green = delivery)"],
     ["other", "Hand-over of some other message"],
     ["reach", `How far the selected phone can reach (${META.radius} m)`],
@@ -610,7 +778,7 @@ function renderLegend() {
 }
 function relLabel(m) { return (m.rel === "separated_friends" || m.rel === "same_group_fallback" || m.rel === "random_same_group") ? "friend" : "person"; }
 function renderMsgSelect() {
-  $("msgSel").innerHTML = MSG.map(m => `<option value="${m.id}">#${m.id + 1} · phone ${m.src} → ${relLabel(m)} ${m.dst} · sent ${fmt(m.created)}</option>`).join("");
+  $("msgSel").innerHTML = MSG.map(m => `<option value="${m.id}">#${m.id + 1} · phone ${m.src} → ${relLabel(m)} ${m.dst} · sent ${fmt(m.created)}${m.id === SUGGESTED ? " · suggested example" : ""}</option>`).join("");
   $("msgSel").value = state.msg;
 }
 function renderMethodSelects() {
@@ -632,9 +800,13 @@ function renderPanels() {
   $("ageTxt").innerHTML = age < 0 ? `Message is written in <b class="num">${fmt(-age)}</b>`
     : age < m.expiry - m.created ? `Message age <b class="num">${fmt(age)}</b> &middot; target 05:00 &middot; deleted at 15:00` : `Message has expired`;
   const rel = relLabel(m) === "friend" ? "friend" : "another festival-goer";
-  const sepNow = t >= m.created ? (sepState(t, m.dst) ? `Right now phone ${m.dst} is away from their group.` : sepState(t, m.src) ? `Right now phone ${m.src} is away from their group.` : "Right now both are with their group.") : "";
-  $("msgText").innerHTML = `<p style="margin:0 0 6px">Phone <b class="num">${m.src}</b> writes to ${rel} phone <b class="num">${m.dst}</b> at <b class="num">${fmt(m.created)}</b>.</p>
-    <p class="muted" style="margin:0;font-size:13.5px">${sepNow} Message ${m.id + 1} of ${MSG.length}${m.id === 0 ? " (the first one written; pick any other above)" : ""}.</p>`;
+  const sepNow = t >= m.created ? (sepState(t, m.dst) ? `Right now ${FRIEND} is away from the group.` : sepState(t, m.src) ? `Right now ${SENDER} is away from the group.` : "Right now both are back with their group.") : "";
+  $("msgText").innerHTML = `<p style="margin:0 0 6px"><b>${SENDER}</b> (phone <span class="num">${m.src}</span>) writes "Where are you?" to ${rel}
+    <b>${FRIEND}</b> (phone <span class="num">${m.dst}</span>) at festival time <b class="num">${fmt(m.created)}</b>.</p>
+    <p class="muted" style="margin:0;font-size:13.5px">${sepNow} The names are made up to make the story easy to follow.
+    Message ${m.id + 1} of ${MSG.length}${m.id === SUGGESTED ? " (suggested example: the first message both methods delivered after more than a minute)" : ""}; pick any other above.</p>`;
+  renderNowBar(t);
+  renderWhyNow(t);
   const vs = state.mode === "compare" ? [RUNS[state.methodA], RUNS[state.methodB]] : [runA];
   $("msgBadges").innerHTML = vs.map(r => { const d = deliveredText(r); return `<span class="badge ${d.cls}">${r.name}: ${d.text}</span>`; }).join("");
   // story (first view's method)
@@ -659,6 +831,60 @@ function renderPanels() {
   renderPerson(t);
 }
 function countWalking(t) { let k = 0; for (let n = 0; n < N; n++) k += walking(t, n); return k; }
+const mtag = r => `<span class="mtag"><span class="mswatch" style="background:var(--m-${r.key})"></span>${r.name}</span>`;
+
+/* One plain sentence per shown method describing this exact second of the replay. */
+function nowSentence(run, t) {
+  const m = MSG[state.msg], dl = run.delivered[state.msg];
+  if (t < m.created) return `In ${dur(m.created - t)}, ${SENDER} will send a message to ${FRIEND}.`;
+  if (dl >= 0 && dl <= t) return `✓ ${FRIEND} has the message. It took ${dur(dl - m.created)}, ${dl - m.created <= META.d5 ? "inside" : "longer than"} the 5-minute target.`;
+  if (t >= m.expiry) return `✗ Time ran out. After 15 minutes the message was deleted without reaching ${FRIEND}.`;
+  const hold = holders(run, state.msg, t);
+  let best = Infinity;
+  for (const n of hold.keys()) best = Math.min(best, Math.hypot(px(t, n) - px(t, m.dst), py(t, n) - py(t, m.dst)));
+  const gap = `The closest copy is <b class="num">${Math.round(best)} m</b> from ${FRIEND} (it must get within ${META.radius} m).`;
+  if (run.key === "DirectDelivery") return `Only ${SENDER} has the message. ${SENDER} must walk into ${FRIEND}'s reach. ${gap}`;
+  const n = hold.size, phones = `<b class="num">${n}</b> phone${n === 1 ? "" : "s"}`;
+  if (!run.usesTokens) return `${phones} carry a copy, and every new phone they meet gets one too. ${gap}`;
+  let spare = 0; for (const k of hold.values()) spare += Math.max(0, k - 1);
+  const phase = spare > 0 ? `still handing out copies (<b class="num">${spare}</b> left to give)` : `all ${run.budget} copies are out, so everyone now just waits to bump into ${FRIEND}`;
+  return `${phones} carry a copy; ${phase}. ${gap}`;
+}
+function renderNowBar(t) {
+  const vs = state.mode === "compare" ? [RUNS[state.methodA], RUNS[state.methodB]] : [RUNS[state.methodA]];
+  $("nowLines").innerHTML = vs.map(r => `<p class="line">${vs.length > 1 ? mtag(r) : ""}${nowSentence(r, t)}</p>`).join("");
+  const story = storyFor(RUNS[state.methodA], state.msg).filter(s => s.t <= t);
+  $("nowWhy").innerHTML = story.length ? `<b>Latest step${vs.length > 1 ? ` (${RUNS[state.methodA].name})` : ""}:</b> ${story[story.length - 1].text}`
+    : "Press <b>Play</b> to start the clock.";
+}
+function renderWhyNow(t) {
+  let walk = 0, away = 0;
+  for (let n = 0; n < N; n++) { walk += walking(t, n); away += sepState(t, n) ? 1 : 0; }
+  $("whyNow").innerHTML = `<table class="cmp"><tbody>
+    <tr><td>Walking right now</td><td class="num">${walk} of ${N}</td></tr>
+    <tr><td>Standing at a stage, food stall&hellip;</td><td class="num">${N - walk} of ${N}</td></tr>
+    <tr><td>Away from their friend group</td><td class="num">${away}</td></tr></tbody></table>`;
+}
+function bars(rows, max, fmtv, highlight) {
+  return `<div class="bars">${rows.map(r => `<div class="bar${highlight && highlight.includes(r.key) ? " me" : ""}" title="${r.label}: ${fmtv(r.v)}">
+    <span class="who"><span class="mswatch" style="background:var(--m-${r.key})"></span>${r.label}</span>
+    <span class="track2"><span class="fill" style="display:block;width:${Math.max(0.5, 100 * r.v / max)}%;background:var(--m-${r.key})"></span></span>
+    <span class="val">${fmtv(r.v)}</span></div>`).join("")}</div>`;
+}
+function renderScore() {
+  const order = ["DirectDelivery", "Epidemic", "BSW", "MWS"].filter(k => RUNS[k]);
+  const shown = state.mode === "compare" ? [state.methodA, state.methodB] : [state.methodA];
+  const rs = order.map(k => RUNS[k]);
+  const g = rs[0].metrics.generated;
+  $("scoreText").innerHTML = `<p class="note" style="margin:0">All ${g} messages written in this one festival, for every method. Bold = shown on the map.</p>
+    <div class="metric-h">Arrived within 5 minutes <small>&middot; higher is better</small></div>
+    ${bars(rs.map(r => ({ key: r.key, label: r.name, v: r.metrics.d5 })), 100, v => v.toFixed(0) + "%", shown)}
+    <p class="note" style="margin:0">Out of every 100 messages, how many reached the friend in time.</p>
+    <div class="metric-h">Hand-overs per message <small>&middot; lower = less phone work</small></div>
+    ${bars(rs.map(r => ({ key: r.key, label: r.name, v: r.metrics.t })), Math.max(...rs.map(r => r.metrics.t)), v => v.toFixed(1), shown)}
+    <p class="note" style="margin:0">How many times, on average, a message was passed between phones. "Copy to everyone" is fast but very busy.</p>
+    <p class="note" style="margin-top:8px"><b>One festival is not proof.</b> Open <i>What we found in 30 festivals</i> for the averages and the tests.</p>`;
+}
 function renderPerson(t) {
   const n = state.selected;
   if (n < 0) return;
@@ -723,8 +949,11 @@ function applyMode() {
   $("methodBWrap").hidden = state.mode !== "compare";
   $("methodALbl").textContent = state.mode === "compare" ? "Left map" : "Method";
   document.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
-  for (const v of views) { const r = runOf(v); v.name.textContent = r.name; v.desc.textContent = r.oneLine;
+  for (const v of views) { const r = runOf(v);
+    v.name.innerHTML = `<span class="mswatch" style="background:var(--m-${r.key})"></span>${r.name}${r.key === "MWS" ? " (our method)" : ""}`;
+    v.desc.textContent = r.oneLine; v.rules.innerHTML = rulesFor(r);
     v.long.textContent = r.summary + " Research name: " + r.technical + "."; v.badgeKey = ""; }
+  renderScore();
   resize(); renderTrack(); lastStoryKey = ""; render(true);
 }
 function applyStyle(s) {
@@ -739,14 +968,130 @@ function selectMessage(id) {
   renderTrack(); setTime(MSG[state.msg].created - 5);
 }
 
+/* ------------------------------------------------------------------ "What we found" (finished batch, read from its CSVs at export time) */
+const PLAIN = { DirectDelivery: "Hand-delivery only", Epidemic: "Copy to everyone", BSW: "Limited copies", MWS: "Walker-first (ours)" };
+const SHORT = { DirectDelivery: "Direct Delivery", Epidemic: "Epidemic", BSW: "BSW", MWS: "MWS" };
+const pp = v => (v >= 0 ? "+" : "") + v.toFixed(2) + " points";
+const pfmt = p => p == null ? "not computable" : p < 0.001 ? p.toExponential(1) : p.toFixed(3);
+function verdictPlain(dec) {
+  if (/^Reject/.test(dec)) return { cls: "yes", text: "YES, supported by the evidence" };
+  if (/^Non-inferiority established/.test(dec)) return { cls: "yes", text: "YES, not worse (within the 5-point margin)" };
+  if (/inconclusive/i.test(dec)) return { cls: "no", text: "CAN'T TELL, the test could not be computed" };
+  return { cls: "no", text: "NOT SHOWN, the evidence is not strong enough" };
+}
+const HQ = {
+  H1: { q: "Does our method get more messages to the friend within 5 minutes than Limited copies?",
+        why: "" },
+  H2: { q: "Is our method at least as reliable within 15 minutes (not worse by more than 5 points)?",
+        why: "Both methods deliver almost every message within 15 minutes (about 100 %), so there is hardly any room for a difference." },
+  H3: { q: "Does our method need fewer hand-overs than Limited copies?",
+        why: "Both methods always hand out all 8 copies, so their phone work is the same by design." },
+  H4: { q: "Does our method's advantage change with crowd size (50, 100 or 200 people)?", why: "" },
+  H5: { q: "Is “walking right now” a better signal than “walked a lot in the last 5 minutes”? (our method, 100 people)", why: "" },
+};
+const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
+function renderResults() {
+  const R = D.results, el = $("resultsView");
+  if (!R) { el.innerHTML = `<div class="card"><h2>No experiment results yet</h2><p>Run the confirmatory batch, then rebuild this page:
+    <span class="num">python main.py run --all</span> and <span class="num">python main.py explorer</span>.</p></div>`; return; }
+  const e1 = (n, a) => R.e1.find(r => r.n === n && r.alg === a);
+  const sizes = [...new Set(R.e1.map(r => r.n))].sort((a, b) => a - b);
+  const algs = ["DirectDelivery", "Epidemic", "BSW", "MWS"].filter(a => R.e1.some(r => r.alg === a));
+  const mean5 = a => avg(sizes.map(n => e1(n, a).d5));
+  const T = Object.fromEntries(R.tests.map(t => [t.h, t]));
+  const h1 = T.H1, h5 = T.H5, v1 = h1 ? verdictPlain(h1.decision) : null;
+  const imm = R.e4.find(r => r.signal === "immediate"), hist = R.e4.find(r => r.signal === "historical");
+  const b = (a, L) => R.e2.find(r => r.alg === a && r.budget === L);
+  const budgets = [...new Set(R.e2.map(r => r.budget))].sort((x, y) => x - y);
+  const mid = sizes[Math.floor(sizes.length / 2)];
+  const bullets = [];
+  if (h1) bullets.push(`<b>Our method vs the standard one:</b> ${PLAIN.MWS} got <b>${mean5("MWS").toFixed(1)} %</b> of messages to the friend within 5 minutes,
+    ${PLAIN.BSW} <b>${mean5("BSW").toFixed(1)} %</b> (average over ${sizes.join(", ")} people). The gap of ${pp(h1.diff)} is
+    ${v1.cls === "yes" ? "statistically supported" : "<b>too small and too uncertain to call a real improvement</b>"}${R.targets && R.targets.H1 != null ? `; we decided in advance that ${R.targets.H1} points would be the smallest gap worth caring about` : ""}.
+    In short: <b>about as good, not clearly better.</b>`);
+  if (h5 && imm && hist) bullets.push(`<b>Which walking signal works:</b> using who is walking <i>right now</i> delivered <b>${imm.d5.toFixed(1)} %</b> on time,
+    using who walked a lot in the last 5 minutes only <b>${hist.d5.toFixed(1)} %</b>. ${verdictPlain(h5.decision).cls === "yes" ? "This difference <b>is</b> statistically supported." : "This difference is not statistically supported."}`);
+  if (budgets.length > 1) bullets.push(`<b>What matters most is the number of copies:</b> ${PLAIN.BSW} went from
+    ${budgets.map(L => `<b>${b("BSW", L).d5.toFixed(1)} %</b> (${L} copies)`).join(" to ")}. Choosing smarter carriers changed results by only about 1 point.`);
+  if (e1(mid, "Epidemic") && e1(mid, "DirectDelivery")) bullets.push(`<b>The two extremes (${mid} people):</b> ${PLAIN.Epidemic} reached <b>${e1(mid, "Epidemic").d5.toFixed(1)} %</b>
+    but needed <b>${e1(mid, "Epidemic").t.toFixed(0)}</b> hand-overs per message and overflowed phone storage; ${PLAIN.DirectDelivery} needed about 1 hand-over but only
+    <b>${e1(mid, "DirectDelivery").d5.toFixed(1)} %</b> arrived on time. The limited-copy methods sit in the middle with 8 hand-overs.`);
+
+  const chart = (key, max, fv) => sizes.map(n => `<div class="groupttl">${n} people</div>` +
+    bars(algs.map(a => ({ key: a, label: PLAIN[a], v: e1(n, a)[key] })), max, fv, ["MWS"])).join("");
+  const maxT = Math.max(...R.e1.map(r => r.t));
+  const hyp = R.tests.map(t => {
+    const v = verdictPlain(t.decision), hq = HQ[t.h] || { q: t.title, why: "" };
+    const nums = t.diff == null ? `Formal test p = ${pfmt(t.pHolm)} (after correction for testing 5 questions).`
+      : t.h === "H3" ? `Average difference ${t.diff.toFixed(3)} hand-overs per message (practically zero); likely range ${t.lo.toFixed(3)} to ${t.hi.toFixed(3)}. p = ${pfmt(t.pHolm)} after correction for testing 5 questions.`
+      : `Average difference ${pp(t.diff)}; likely range ${t.lo.toFixed(2)} to ${t.hi.toFixed(2)}. p = ${pfmt(t.pHolm)} after correction for testing 5 questions.`;
+    return `<div class="card hyp"><div class="lbl">${t.h}</div><div class="q">${hq.q}</div>
+      <div><span class="verdict ${v.cls}">${v.text}</span></div>
+      <div style="font-size:13.5px">${nums}</div>
+      ${t.note && hq.why ? `<div style="font-size:13.5px"><b>Why:</b> ${hq.why}</div>` : ""}
+      ${t.zeroVar ? `<div style="font-size:13.5px">Every festival gave exactly the same difference, so no test is possible.</div>` : ""}
+      <div class="formal">Formal decision: ${t.decision}</div></div>`;
+  }).join("");
+  const other = [];
+  if (imm && hist) other.push(`<div class="card"><h2>Walking signal (100 people)</h2>${bars([
+      { key: "MWS", label: "Walking right now", v: imm.d5 }, { key: "MWS", label: "Walked in last 5 min", v: hist.d5 }], 100, v => v.toFixed(1) + "%")}
+      <p class="note">Within 5 minutes. A person who <i>was</i> walking may have stopped; "right now" is more up to date.</p></div>`);
+  if (R.e5.length) other.push(`<div class="card"><h2>Wrong walking readings (100 people)</h2>${bars(R.e5.map(r => ({ key: r.alg,
+      label: r.alg === "MWS" ? `Ours, ${Math.round(r.err * 100)} % wrong` : PLAIN[r.alg], v: r.d5 })), 100, v => v.toFixed(1) + "%")}
+      <p class="note">Phones sometimes mistake walking for standing. Even with 1 in 5 readings wrong, our method did not get worse, which also shows the walking signal has only a small effect here.</p></div>`);
+  if (budgets.length) other.push(`<div class="card"><h2>Number of copies allowed (100 people)</h2>${budgets.map(L => `<div class="groupttl">${L} copies</div>` +
+      bars(["BSW", "MWS"].map(a => ({ key: a, label: PLAIN[a], v: b(a, L).d5 })), 100, v => v.toFixed(1) + "%")).join("")}
+      <p class="note">More copies help much more than smarter carrier choice.</p></div>`);
+  if (R.e6.length) other.push(`<div class="card"><h2>Type of message (100 people)</h2>${["separated_friends", "random"].map(w => `<div class="groupttl">${w === "random" ? "Between random people" : "To a separated friend"}</div>` +
+      bars(["BSW", "MWS"].map(a => ({ key: a, label: PLAIN[a], v: (R.e6.find(r => r.alg === a && r.workload === w) || { d5: 0 }).d5 })), 100, v => v.toFixed(1) + "%")).join("")}
+      <p class="note">Checks that the picture is similar when messages go between strangers.</p></div>`);
+  el.innerHTML = `
+    <div class="card answer"><span class="lbl">The short answer</span><ul>${bullets.map(x => `<li>${x}</li>`).join("")}</ul></div>
+    <div class="statrow">
+      <div class="card"><div class="lbl">Simulated festivals</div><div class="stat">${R.ok.toLocaleString()}</div><div class="note">of ${R.runs.toLocaleString()} planned; ${R.failed} failed</div></div>
+      <div class="card"><div class="lbl">Different crowds</div><div class="stat">${R.nSeeds}</div><div class="note">random seeds ${R.seeds[0]}&ndash;${R.seeds[1]}, fixed before the run</div></div>
+      <div class="card"><div class="lbl">Integrity checks</div><div class="stat">${R.quality.pass} / ${R.quality.total}</div><div class="note">passed (no lost runs, copy counts add up, same crowd for every method)</div></div>
+      <div class="card"><div class="lbl">Fairness</div><div class="stat">Same crowd</div><div class="note">every method saw the same people, moves and messages</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>Messages that arrived within 5 minutes</h2><p class="note">Average over ${R.nSeeds} festivals &middot; higher is better &middot; bold = our method</p>
+        ${chart("d5", 100, v => v.toFixed(1) + "%")}</div>
+      <div class="card"><h2>Hand-overs per message (phone work)</h2><p class="note">Average over ${R.nSeeds} festivals &middot; lower = less work</p>
+        ${chart("t", maxT, v => v.toFixed(1))}</div>
+    </div>
+    <h2 style="margin-top:6px">Our five research questions</h2>
+    <div class="grid2">${hyp}</div>
+    <h2 style="margin-top:6px">Other things we tested</h2>
+    <div class="grid2">${other.join("")}</div>
+    <details class="card"><summary>How to read these numbers</summary><dl class="gloss">
+      <dt>Points (percentage points)</dt><dd>77 % vs 78 % is a difference of 1 point.</dd>
+      <dt>Average over ${R.nSeeds} festivals</dt><dd>Each festival is a different random crowd. Every method ran on the same ${R.nSeeds} crowds, and we compare them crowd by crowd.</dd>
+      <dt>Likely range</dt><dd>The 95 % confidence interval: where the true difference probably lies. A range that touches or includes 0 means "maybe no difference at all".</dd>
+      <dt>p-value and correction</dt><dd>How surprising the result would be if there were really no difference. Below 0.05 counts as evidence. Because we asked 5 questions, the bar is made stricter (Holm correction).</dd>
+      <dt>"Not shown"</dt><dd>We did not find enough evidence. It does <b>not</b> prove the methods are identical.</dd>
+      <dt>Hand-overs are not battery</dt><dd>Fewer hand-overs suggest less phone work, but battery use was not measured.</dd>
+    </dl></details>
+    <p class="note">Read from <span class="num">results/${R.phase}/processed</span> when this page was built &middot; code ${R.codeVersions.join(", ")}. Simulated venue and idealised radio; not a real festival.</p>`;
+}
+function applyView(v) {
+  state.view = v === "results" ? "results" : "watch";
+  $("watchView").hidden = state.view !== "watch"; $("resultsView").hidden = state.view !== "results";
+  document.querySelectorAll("[data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === state.view)));
+  if (state.view === "results") { setPlaying(false); renderResults(); window.scrollTo(0, 0); }
+  else { resize(); render(true); }
+}
+
 /* ------------------------------------------------------------------ guided tour */
 const TOUR = [
-  { el: null, title: "Welcome to the festival", body: "This is a replay of a real simulation run. Each dot is a festival-goer whose phone runs LinkUp. There is <b>no mobile signal</b>, so phones pass messages directly to each other whenever two people come within " + META.radius + " metres." },
-  { el: "maps", title: "The map", body: "Shaded boxes are the stages, food court, toilets and entrance. <b>Filled dots are walking</b>, hollow dots are standing. Thin lines join the sender's and the friend's group; a <b>dashed red line</b> means that person has wandered away from their friends." },
-  { el: "msgCard", title: "One message to follow", body: "We follow one message: the <b>FROM</b> square writes to a friend (the <b>TO</b> diamond) who has been separated. Thick rings show which phones carry a copy right now." },
-  { el: "controls", title: "Choose how phones share", body: "Pick a method, or press <b>Compare two</b> to see two methods side by side on exactly the same crowd and the same message." },
-  { el: "timeline", title: "Play the clock", body: "Press <b>Play</b> and change the speed. The shaded strip is the 5-minute target. You can drag the slider to any moment." },
-  { el: "storyCard", title: "The story, in plain words", body: "Every hand-over is explained here as it happens: who passed a copy to whom, and why. Click any dot to learn about that person. Use <b>What do these words mean?</b> at the bottom for definitions." },
+  { el: null, title: "Welcome to the festival", body: `${SENDER} lost the friend group at a packed festival and wants to tell ${FRIEND} where to meet. The mobile network is jammed, but phones can still talk to phones within ${META.radius} metres. So the message has to be <b>passed hand to hand</b> through the crowd.` },
+  { el: "intro", title: "The idea in four steps", body: "These four boxes are the whole project in one line each: the problem, what still works, the idea, and our research question: <b>who should carry the message?</b>" },
+  { el: "maps", title: "The map", body: `Each dot is one person with a phone. Shaded boxes are the stages, food court, toilets and entrance. <b>Filled dots are walking</b>, hollow dots are standing. The black square is ${SENDER}; the diamond is ${FRIEND}. Thick rings are phones carrying a copy, and the number shows how many copies each still controls.` },
+  { el: "whyCard", title: "Why are people moving?", body: "People walk between areas and stay a while, like at a real festival. Friend groups move together, and sometimes someone wanders off. Movement matters because <b>a message can only jump when two people meet</b>." },
+  { el: "maps", title: "Two methods, same crowd", body: `The left map uses <b>our method</b> (walker-first); the right map uses the standard <b>limited copies</b> method. Same people, same moves, same message. Only the rule for <b>who gets a copy</b> differs, listed under each map's name.` },
+  { el: "nowBar", title: "Right now, in one sentence", body: `This line always says what is happening at this second: how many phones carry the message, whether copies are still being handed out, and how far the nearest copy is from ${FRIEND}.` },
+  { el: "timeline", title: "Play the clock", body: "Press <b>Play</b> and choose a speed. The shaded strip is the 5-minute target. Drag the slider to any moment; the marks show when the message was delivered on each map." },
+  { el: "storyCard", title: "The story, step by step", body: "Every hand-over is explained here as it happens: who passed a copy to whom, and <b>why that person was chosen</b>. Click any dot on the map to learn about that person." },
+  { el: "scoreCard", title: "The scoreboard", body: "How every method did over all messages in this one festival: how many arrived within 5 minutes, and how much phone work it took. For real conclusions, open <b>What we found in 30 festivals</b> at the top." },
 ];
 let tourStep = 0;
 function showTour(i) {
@@ -785,7 +1130,8 @@ $("restartBtn").addEventListener("click", () => { setPlaying(false); setTime(MSG
 $("backBtn").addEventListener("click", () => setTime(Math.floor(state.time) - 1));
 $("fwdBtn").addEventListener("click", () => setTime(Math.floor(state.time) + 1));
 $("scrub").addEventListener("input", e => setTime(+e.target.value));
-$("helpBtn").addEventListener("click", () => showTour(0));
+$("helpBtn").addEventListener("click", () => { applyView("watch"); showTour(0); });
+document.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => applyView(b.dataset.view)));
 $("tourNext").addEventListener("click", () => tourStep < TOUR.length - 1 ? showTour(tourStep + 1) : endTour());
 $("tourPrev").addEventListener("click", () => showTour(Math.max(0, tourStep - 1)));
 $("tourSkip").addEventListener("click", endTour);
@@ -803,6 +1149,12 @@ window.addEventListener("resize", () => { resize(); render(true); });
 
 /* ------------------------------------------------------------------ start */
 $("radiusTxt").textContent = META.radius;
+document.querySelectorAll("[data-radius]").forEach(e => { e.textContent = META.radius; });
+if (META.dwell) {
+  const mm = r => `${Math.round(r[0] / 60)}&ndash;${Math.round(r[1] / 60)} min`;
+  $("dwellTxt").innerHTML = `${mm(META.dwell.main_stage)} at a stage, ${mm(META.dwell.food_court)} at the food court, ${mm(META.dwell.facilities)} at the toilets`;
+}
+if (META.minSeparation) $("sepTxt").textContent = Math.round(META.minSeparation / 60);
 $("aboutCard").innerHTML = `<b>About this replay.</b> Genuine output of the LinkUp simulator: ${N} phones, development seed ${META.seed},
   reach ${META.radius} m, copy limit ${META.copyBudget}, ${MSG.length} messages. All methods ran on the same crowd and the same messages.
   Movement within each second is drawn as a straight line, as in the model. Synthetic venue, idealised radio; not a real festival.
@@ -816,6 +1168,7 @@ applyMode();
 setTime(params.get("t") ? +params.get("t") : MSG[state.msg].created - 5);
 let seen = null; try { seen = localStorage.getItem("linkup-tour-seen"); } catch (e) { /* storage unavailable */ }
 if (params.get("tour") === "1" || (params.get("tour") !== "0" && !seen)) showTour(0);
+applyView(params.get("view") || "watch");
 if (params.get("play") === "1") setPlaying(true);
 document.body.dataset.ready = "1";
 })();

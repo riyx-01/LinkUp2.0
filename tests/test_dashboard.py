@@ -101,7 +101,7 @@ def test_explorer_runs_in_a_real_browser_without_errors(payload, tmp_path, style
     page.write_text(render_html(payload), encoding="utf-8")
     url = page.resolve().as_uri() + f"#tour=0&mode=compare&style={style}&t=420"
     dom = subprocess.run([_browser(), "--headless=new", "--disable-gpu", "--virtual-time-budget=4000",
-                          "--dump-dom", url], capture_output=True, text=True, timeout=120).stdout
+                          "--dump-dom", url], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120).stdout
     assert 'data-ready="1"' in dom
     errors = re.search(r'<div id="errors"[^>]*>([^<]*)</div>', dom)
     assert errors is not None and errors.group(1).strip() == ""
